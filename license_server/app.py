@@ -812,7 +812,7 @@ def get_order_status(order_id):
         return jsonify({'error': str(e)}), 500
 
 # ==============================================================================
-# CASSO PAYMENT INTEGRATION
+# PAYOS PAYMENT INTEGRATION
 # ==============================================================================
 
 @app.route('/api/payment/create-order', methods=['POST'])
