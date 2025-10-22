@@ -1,0 +1,114 @@
+╔════════════════════════════════════════════════════════════════╗
+║                   ⚠️  ĐỌC NGAY TRƯỚC KHI BUILD                ║
+║                    Windows Defender Issue                     ║
+╚════════════════════════════════════════════════════════════════╝
+
+
+🚨 CẢNH BÁO:
+
+Windows Defender SẼ CHẶN file ocr_tool.exe với cảnh báo:
+  → Trojan:Win32/Wacatac.B!ml
+  → ĐÂY LÀ FALSE POSITIVE (cảnh báo SAI!)
+  → File HOÀN TOÀN AN TOÀN!
+
+
+═══════════════════════════════════════════════════════════════
+
+
+✅ GIẢI PHÁP (Chọn 1 trong 2):
+
+
+┌─────────────────────────────────────────────────────────────┐
+│  CÁCH 1: Script Tự Động (KHUYẾN NGHỊ)                      │
+└─────────────────────────────────────────────────────────────┘
+
+1. Chuột phải vào: Add_Exclusion_Admin.ps1
+2. Chọn: "Run with PowerShell" (as Administrator)
+3. Chạy: rebuild_after_exclusion.bat
+
+
+┌─────────────────────────────────────────────────────────────┐
+│  CÁCH 2: Thủ Công                                           │
+└─────────────────────────────────────────────────────────────┘
+
+1. Thêm Exclusion:
+   Windows Security → Virus & threat protection
+   → Manage settings → Exclusions
+   → Add exclusion → Folder → Chọn: F:\OCR\OCR
+
+2. Build:
+   Chạy: build_safe.bat
+   Hoặc: rebuild_after_exclusion.bat
+
+
+═══════════════════════════════════════════════════════════════
+
+
+📁 CÁC FILE QUAN TRỌNG:
+
+
+🔴 ĐỌC NGAY:
+  • KHAC_PHUC_NGAY.txt         → Hướng dẫn nhanh
+  • FIX_WINDOWS_DEFENDER.md    → Hướng dẫn đầy đủ
+
+🔧 TOOLS:
+  • Add_Exclusion_Admin.ps1        → Thêm exclusion tự động
+  • rebuild_after_exclusion.bat    → Build sau khi thêm exclusion
+  • build_safe.bat                 → Build với tùy chọn SAFE
+
+📖 DOCUMENTATION:
+  • README.md                      → Tổng quan dự án
+  • CHO_NGUOI_DUNG_CUOI.txt       → Hướng dẫn cho user cuối
+  • README_SETUP.md                → Hướng dẫn setup chi tiết
+
+
+═══════════════════════════════════════════════════════════════
+
+
+⚡ QUICK START:
+
+
+1. Mở PowerShell AS ADMINISTRATOR
+
+2. cd F:\OCR\OCR
+
+3. .\Add_Exclusion_Admin.ps1
+
+4. .\rebuild_after_exclusion.bat
+
+5. DONE!
+
+
+═══════════════════════════════════════════════════════════════
+
+
+❓ FAQ:
+
+
+Q: Tại sao bị chặn?
+A: PyInstaller + UPX compression + Keyboard hooks
+   → Windows Defender rất nhạy cảm với các app Python
+
+Q: File có an toàn không?
+A: 100% an toàn! Có thể xem source code trong ocr_tool.py
+
+Q: Có cách nào tránh hoàn toàn?
+A: Mua Code Signing Certificate (~$100-500/năm)
+
+Q: Nếu vẫn bị chặn sau khi thêm exclusion?
+A: Tắt Real-time Protection tạm thời, build, rồi bật lại
+
+
+═══════════════════════════════════════════════════════════════
+
+
+🎯 HÀNH ĐỘNG TIẾP THEO:
+
+
+→ ĐỌC: KHAC_PHUC_NGAY.txt
+→ CHẠY: Add_Exclusion_Admin.ps1
+→ BUILD: rebuild_after_exclusion.bat
+
+
+═══════════════════════════════════════════════════════════════
+

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán thành công - Vietnamese OCR Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 60px 40px;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease-out 0.2s backwards;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon svg {
+            width: 50px;
+            height: 50px;
+            stroke: white;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: checkmark 0.5s ease-out 0.5s forwards;
+        }
+
+        @keyframes checkmark {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #2d3436;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #636e72;
+            margin-bottom: 40px;
+        }
+
+        .license-box {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .license-label {
+            font-size: 14px;
+            color: #636e72;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .license-key {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #2d3436;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #000;
+            transform: translateY(-2px);
+        }
+
+        .support-info {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+            color: #636e72;
+            font-size: 14px;
+        }
+
+        .support-info a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f1c40f;
+            position: absolute;
+            animation: confetti-fall 3s linear;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .success-container {
+                padding: 40px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .license-key {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">
+            <svg viewBox="0 0 52 52">
+                <path d="M14 27l8 8 16-16"/>
+            </svg>
+        </div>
+
+        <h1>🎉 Thanh toán thành công!</h1>
+        <p class="subtitle">Cảm ơn bạn đã mua Vietnamese OCR Tool</p>
+
+        <div class="license-box">
+            <div class="license-label">License Key của bạn</div>
+            <div class="license-key" id="licenseKey">{{ license_key }}</div>
+            <button class="copy-btn" onclick="copyLicense()">
+                📋 Copy License Key
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>📝 Hướng dẫn kích hoạt:</h3>
+            <ol>
+                <li><strong>Lưu lại</strong> License Key ở trên (đã gửi email cho bạn)</li>
+                <li><strong>Tải và cài đặt</strong> Vietnamese OCR Tool</li>
+                <li><strong>Mở ứng dụng</strong> lần đầu tiên</li>
+                <li><strong>Nhập License Key</strong> khi được yêu cầu</li>
+                <li><strong>Hoàn tất!</strong> Bắt đầu sử dụng ngay</li>
+            </ol>
+        </div>
+
+        <a href="https://github.com/yourusername/vietnamese-ocr-tool/releases" class="download-btn">
+            ⬇️ Tải Vietnamese OCR Tool
+        </a>
+
+        <div class="support-info">
+            <p>Cần hỗ trợ? Liên hệ: <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a></p>
+            <p style="margin-top: 10px;">Hoặc gọi: <strong>0123 456 789</strong></p>
+        </div>
+    </div>
+
+    <script>
+        function copyLicense() {
+            const licenseKey = document.getElementById('licenseKey').textContent;
+            const btn = event.target;
+            
+            navigator.clipboard.writeText(licenseKey).then(() => {
+                btn.textContent = '✅ Đã copy!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy License Key';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Confetti effect
+        function createConfetti() {
+            const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 50);
+            }
+        }
+
+        // Trigger confetti on page load
+        window.addEventListener('load', createConfetti);
+
+        // Send license key via email (optional - implement later)
+        fetch('/api/send-license-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({license_key: '{{ license_key }}'})
+        }).catch(() => {}); // Silent fail
+    </script>
+</body>
+</html>
+

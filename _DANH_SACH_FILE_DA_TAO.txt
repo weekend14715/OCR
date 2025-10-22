@@ -1,0 +1,161 @@
+================================================================================
+    CÁC FILE ĐÃ ĐƯỢC TẠO ĐỂ ĐÓNG GÓI INSTALLER
+================================================================================
+
+📋 DANH SÁCH FILE MỚI:
+---------------------
+
+1. ✅ setup.iss
+   📄 Script Inno Setup chính để tạo installer
+   🎯 Đây là file QUAN TRỌNG NHẤT!
+   
+2. ✅ build_all.bat
+   📄 Script tự động hoàn chỉnh (Windows Batch)
+   🎯 Chạy file này để tự động build toàn bộ!
+   
+3. ✅ ocr_tool.spec
+   📄 File cấu hình PyInstaller
+   🎯 Giúp build Python → EXE dễ dàng hơn
+   
+4. ✅ requirements.txt
+   📄 Danh sách các thư viện Python cần thiết
+   🎯 Dùng để cài đặt dependencies
+   
+5. ✅ README_SETUP.md
+   📄 Hướng dẫn đầy đủ bằng Markdown (có format đẹp)
+   🎯 Xem bằng trình đọc Markdown hoặc GitHub
+   
+6. ✅ BUILD_INSTRUCTIONS.md
+   📄 Hướng dẫn chi tiết từng bước
+   🎯 Document đầy đủ nhất với troubleshooting
+   
+7. ✅ HUONG_DAN_NHANH.txt
+   📄 Hướng dẫn ngắn gọn bằng tiếng Việt
+   🎯 Xem nhanh để biết cần làm gì
+
+
+================================================================================
+    CÁCH SỬ DỤNG - 3 PHƯƠNG PHÁP
+================================================================================
+
+🚀 PHƯƠNG PHÁP 1: TỰ ĐỘNG (KHUYẾN NGHỊ)
+---------------------------------------
+Chỉ cần double-click:
+    
+    build_all.bat
+
+Xong! File Setup sẽ nằm trong thư mục Output/
+
+
+📖 PHƯƠNG PHÁP 2: THỦ CÔNG ĐƠN GIẢN
+-----------------------------------
+Bước 1: Cài thư viện
+    pip install -r requirements.txt
+    pip install pyinstaller
+
+Bước 2: Build EXE
+    pyinstaller ocr_tool.spec
+
+Bước 3: Copy Tesseract
+    xcopy "C:\Program Files\Tesseract-OCR" "Tesseract-OCR\" /E /I /H /Y
+
+Bước 4: Compile Inno Setup
+    - Mở setup.iss
+    - Nhấn F9
+
+
+🔧 PHƯƠNG PHÁP 3: THỦ CÔNG NÂNG CAO
+-----------------------------------
+Xem file: BUILD_INSTRUCTIONS.md
+(Hướng dẫn chi tiết với nhiều tùy chọn)
+
+
+================================================================================
+    FILE CẦN CÓ SẴN TRƯỚC KHI BUILD
+================================================================================
+
+Các file đã có trong dự án của bạn:
+✓ ocr_tool.py          - Code Python chính
+✓ app_icon.ico         - Icon ứng dụng
+✓ tesseract-main/      - Source code Tesseract
+  └── tessdata/
+      └── vie.traineddata  - Dữ liệu tiếng Việt
+
+Các file BẠN CẦN CHUẨN BỊ THÊM:
+□ icon.png             - Tạo từ app_icon.ico (script sẽ tự tạo)
+□ Tesseract-OCR/       - Copy từ cài đặt (script sẽ tự copy)
+□ dist/ocr_tool/       - PyInstaller sẽ tạo
+
+
+================================================================================
+    KẾT QUẢ SAU KHI BUILD
+================================================================================
+
+Sau khi chạy thành công, bạn sẽ có:
+
+📦 Output/VietnameseOCRTool_Setup.exe
+    └─→ File cài đặt hoàn chỉnh (50-150 MB)
+    └─→ Copy file này sang máy khác để cài đặt!
+
+
+================================================================================
+    CÀI ĐẶT CẦN THIẾT
+================================================================================
+
+Trước khi build, hãy đảm bảo đã cài:
+
+1. Python 3.8+
+   Download: https://www.python.org/downloads/
+   
+2. Inno Setup 6
+   Download: https://jrsoftware.org/isdl.php
+   
+3. Tesseract OCR
+   Download: https://github.com/UB-Mannheim/tesseract/wiki
+
+
+================================================================================
+    HƯỚNG DẪN NHANH
+================================================================================
+
+1️⃣ Cài Python, Inno Setup, Tesseract
+
+2️⃣ Chạy: build_all.bat
+
+3️⃣ Lấy file: Output\VietnameseOCRTool_Setup.exe
+
+4️⃣ Test trên máy khác
+
+5️⃣ Phân phối! 🎉
+
+
+================================================================================
+    TRỢ GIÚP & TÀI LIỆU
+================================================================================
+
+📄 HUONG_DAN_NHANH.txt       - Đọc đầu tiên (đơn giản nhất)
+📄 README_SETUP.md            - Hướng dẫn đầy đủ với format đẹp
+📄 BUILD_INSTRUCTIONS.md      - Document chi tiết nhất
+📄 setup.iss                  - File cấu hình Inno Setup
+📄 ocr_tool.spec             - File cấu hình PyInstaller
+
+
+================================================================================
+    CHECKLIST TRƯỚC KHI PHÂN PHỐI
+================================================================================
+
+□ Build thành công không có lỗi
+□ File Setup.exe đã được tạo trong Output/
+□ Kích thước file hợp lý (50-150 MB)
+□ Test cài đặt trên máy ảo hoặc máy sạch
+□ Kiểm tra ứng dụng khởi động được
+□ Kiểm tra OCR nhận dạng tiếng Việt
+□ Icon hiển thị đúng trên System Tray
+□ Tính năng phím tắt hoạt động
+□ Gỡ cài đặt hoạt động bình thường
+
+
+================================================================================
+💡 Gợi ý: Bắt đầu với file HUONG_DAN_NHANH.txt để xem hướng dẫn ngắn gọn!
+================================================================================
+

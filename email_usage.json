@@ -1,0 +1,13 @@
+{
+    "date": "2025-10-22",
+    "accounts": {
+        "ocrtool.license@gmail.com": {
+            "sent_today": 1,
+            "last_reset": "2025-10-22"
+        },
+        "ocrtool.system@gmail.com": {
+            "sent_today": 0,
+            "last_reset": "2025-10-22"
+        }
+    }
+}

@@ -1,0 +1,128 @@
+================================================================================
+    HƯỚNG DẪN NHANH TẠO INSTALLER CHO VIETNAMESE OCR TOOL
+================================================================================
+
+BƯỚC 1: CÀI ĐẶT PHẦN MỀM CẦN THIẾT
+-----------------------------------
+□ Python 3.8 trở lên:  https://www.python.org/downloads/
+□ Inno Setup 6:        https://jrsoftware.org/isdl.php
+□ Tesseract OCR:       https://github.com/UB-Mannheim/tesseract/wiki
+
+
+BƯỚC 2: CHẠY SCRIPT TỰ ĐỘNG
+----------------------------
+Cách đơn giản nhất - chỉ cần double-click file:
+
+    👉 build_all.bat
+
+Script này sẽ làm TẤT CẢ cho bạn!
+
+
+HOẶC - LÀM THỦ CÔNG (NẾU CẦN)
+==============================
+
+BƯỚC 2A: Cài thư viện Python
+-----------------------------
+Mở Command Prompt tại thư mục này và chạy:
+
+    pip install -r requirements.txt
+    pip install pyinstaller
+
+
+BƯỚC 2B: Tạo file icon.png (nếu chưa có)
+-----------------------------------------
+    python -c "from PIL import Image; img = Image.open('app_icon.ico'); img.save('icon.png')"
+
+
+BƯỚC 2C: Build Python thành EXE
+--------------------------------
+    pyinstaller ocr_tool.spec
+
+Hoặc:
+
+    pyinstaller --name="ocr_tool" --onedir --windowed --icon="app_icon.ico" --add-data="icon.png;." ocr_tool.py
+
+
+BƯỚC 2D: Copy Tesseract-OCR
+----------------------------
+    xcopy "C:\Program Files\Tesseract-OCR" "Tesseract-OCR\" /E /I /H /Y
+
+
+BƯỚC 2E: Tạo Installer
+-----------------------
+1. Mở file setup.iss bằng Inno Setup Compiler
+2. Nhấn F9 để compile
+3. Chờ cho đến khi hoàn tất
+
+
+KẾT QUẢ
+========
+File cài đặt sẽ nằm ở:
+
+    📦 Output\VietnameseOCRTool_Setup.exe
+
+Copy file này sang máy khác để cài đặt!
+
+
+KIỂM TRA SAU KHI BUILD
+=======================
+Trước khi phân phối, hãy kiểm tra:
+
+✓ File Setup.exe đã được tạo trong thư mục Output/
+✓ Kích thước file hợp lý (khoảng 50-150 MB)
+✓ Test cài đặt trên máy ảo hoặc máy khác
+✓ Kiểm tra ứng dụng hoạt động sau khi cài
+
+
+XỬ LÝ LỖI
+==========
+Lỗi: "PyInstaller not found"
+    → pip install pyinstaller
+
+Lỗi: "icon.png not found"
+    → Tạo file icon.png từ app_icon.ico (xem Bước 2B)
+
+Lỗi: "Tesseract-OCR folder not found"
+    → Copy thư mục Tesseract-OCR vào (xem Bước 2D)
+
+Lỗi: Inno Setup không compile được
+    → Kiểm tra tất cả file đã có đủ chưa:
+      • dist/ocr_tool/ (từ PyInstaller)
+      • Tesseract-OCR/ (Tesseract engine)
+      • icon.png và app_icon.ico
+
+
+CẤU TRÚC THƯ MỤC CHUẨN
+=======================
+Trước khi chạy Inno Setup, đảm bảo có cấu trúc:
+
+OCR/
+├── dist/
+│   └── ocr_tool/
+│       ├── ocr_tool.exe      ← File chính
+│       └── (các file dll...)
+│
+├── Tesseract-OCR/
+│   ├── tesseract.exe
+│   └── tessdata/
+│       └── vie.traineddata   ← Quan trọng!
+│
+├── Output/                    ← Inno Setup tạo folder này
+│   └── VietnameseOCRTool_Setup.exe  ← KẾT QUẢ CUỐI CÙNG
+│
+├── app_icon.ico
+├── icon.png
+├── setup.iss
+└── build_all.bat
+
+
+HỖ TRỢ THÊM
+============
+Xem file chi tiết: README_SETUP.md
+Xem file hướng dẫn đầy đủ: BUILD_INSTRUCTIONS.md
+
+
+================================================================================
+💡 MẸO: Chạy build_all.bat là cách nhanh nhất!
+================================================================================
+

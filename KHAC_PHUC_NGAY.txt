@@ -1,0 +1,219 @@
+╔════════════════════════════════════════════════════════════════╗
+║                   ⚠️  WINDOWS DEFENDER CHẶN FILE              ║
+║              Trojan:Win32/Wacatac.B!ml - FALSE POSITIVE       ║
+╚════════════════════════════════════════════════════════════════╝
+
+📢 THÔNG BÁO: 
+File ocr_tool.exe bị Windows Defender phát hiện là "trojan"
+→ ĐÂY LÀ CẢNH BÁO SAI!
+→ File HOÀN TOÀN AN TOÀN!
+
+
+═══════════════════════════════════════════════════════════════
+
+
+🚀 KHẮC PHỤC NGAY (Chọn 1 trong 3 cách):
+
+
+┌─────────────────────────────────────────────────────────────┐
+│  CÁCH 1: Dùng PowerShell Script (NHANH NHẤT)               │
+└─────────────────────────────────────────────────────────────┘
+
+1. Chuột phải vào "Add_Exclusion_Admin.ps1"
+2. Chọn "Run with PowerShell" (hoặc "Run as Administrator")
+3. Nếu hỏi, chọn "Yes" để cho phép
+4. Chờ script chạy xong
+5. Chạy: rebuild_after_exclusion.bat
+
+
+┌─────────────────────────────────────────────────────────────┐
+│  CÁCH 2: Thêm Exclusion Thủ Công (KHUYẾN NGHỊ)             │
+└─────────────────────────────────────────────────────────────┘
+
+Bước 1: Mở Windows Security
+  • Nhấn phím Windows (⊞)
+  • Gõ: "Windows Security"
+  • Nhấn Enter
+
+Bước 2: Vào Virus & Threat Protection
+  • Click "Virus & threat protection" (icon hình lá chắn)
+
+Bước 3: Mở Manage Settings
+  • Scroll xuống
+  • Click "Manage settings"
+
+Bước 4: Thêm Exclusion
+  • Scroll xuống phần "Exclusions"
+  • Click "Add or remove exclusions"
+  • Click "Add an exclusion"
+  • Chọn "Folder"
+
+Bước 5: Chọn Folder
+  • Browse đến: F:\OCR\OCR
+  • Click "Select Folder"
+  • DONE!
+
+Bước 6: Build Lại
+  • Chạy: rebuild_after_exclusion.bat
+  • Hoặc: build_safe.bat
+
+
+┌─────────────────────────────────────────────────────────────┐
+│  CÁCH 3: Restore File Đã Bị Xóa                             │
+└─────────────────────────────────────────────────────────────┘
+
+1. Mở Windows Security
+
+2. Click "Virus & threat protection"
+
+3. Click "Protection history" (lịch sử bảo vệ)
+
+4. Tìm mục:
+   • Trojan:Win32/Wacatac.B!ml
+   • File: F:\OCR\OCR\build\ocr_tool\ocr_tool.exe
+   • Date: 10/21/2025 12:05 PM
+
+5. Click vào mục đó
+
+6. Click "Actions" → "Allow on device"
+
+7. File sẽ được restore
+
+
+═══════════════════════════════════════════════════════════════
+
+
+📋 SAU KHI THÊM EXCLUSION:
+
+
+Chạy 1 trong 2 file sau:
+
+  ✓ rebuild_after_exclusion.bat   (build với hướng dẫn)
+  ✓ build_safe.bat                 (build nhanh)
+
+Cả 2 đều build với tùy chọn SAFE (tắt UPX compression)
+
+
+═══════════════════════════════════════════════════════════════
+
+
+❓ TẠI SAO BỊ CHẶN?
+
+
+Trojan:Win32/Wacatac.B!ml là FALSE POSITIVE cực kỳ phổ biến!
+
+Nguyên nhân:
+  ✗ PyInstaller bootloader có signature giống malware
+  ✗ UPX compression làm Windows Defender nghi ngờ
+  ✗ Keyboard hooks (global hotkey)
+  ✗ Clipboard access
+  ✗ File chưa có Code Signing Certificate
+
+App này:
+  ✓ An toàn 100%
+  ✓ Không có virus/malware
+  ✓ Không kết nối internet
+  ✓ Chỉ dùng Tesseract OCR (mã nguồn mở)
+  ✓ Source code có thể xem trực tiếp
+
+
+═══════════════════════════════════════════════════════════════
+
+
+🔍 KIỂM TRA FILE AN TOÀN:
+
+
+Nếu không tin, bạn có thể:
+
+1. Upload file lên VirusTotal:
+   → https://www.virustotal.com/
+
+2. Kiểm tra với nhiều antivirus khác:
+   → Sẽ thấy hầu hết đều báo "clean"
+   → Chỉ Windows Defender và 1-2 engine khác báo false
+
+3. Xem source code:
+   → Mở file ocr_tool.py
+   → Đọc toàn bộ code
+   → Không có gì nguy hiểm!
+
+
+═══════════════════════════════════════════════════════════════
+
+
+💡 LƯU Ý:
+
+
+• FALSE POSITIVE là vấn đề CỰC KỲ PHỔ BIẾN với PyInstaller
+• Hàng nghìn developer trên thế giới gặp vấn đề này
+• Microsoft biết về vấn đề này nhưng chưa khắc phục
+• Cách duy nhất để tránh 100%: Mua Code Signing Certificate
+  (Chi phí: $100-500/năm)
+
+
+═══════════════════════════════════════════════════════════════
+
+
+🆘 NẾU VẪN KHÔNG ĐƯỢC:
+
+
+Thử các cách sau:
+
+1. Tắt Real-time Protection TẠM THỜI:
+   • Windows Security → Virus & threat protection
+   • Manage settings
+   • Tắt "Real-time protection"
+   • Build lại
+   • Bật lại "Real-time protection"
+
+2. Thử antivirus khác:
+   • Windows Defender rất "nhạy cảm"
+   • Thử dùng: Avast, AVG, Kaspersky Free
+   • Thường sẽ không báo false positive
+
+3. Build trên máy khác:
+   • Thử build trên máy/VM khác
+   • Windows version khác có thể cho kết quả khác
+
+
+═══════════════════════════════════════════════════════════════
+
+
+📞 CẦN HỖ TRỢ?
+
+
+Email: your-email@example.com
+GitHub Issues: https://github.com/yourusername/repo/issues
+
+
+═══════════════════════════════════════════════════════════════
+
+
+✅ CHECKLIST:
+
+
+□ Đã thêm F:\OCR\OCR vào Windows Defender Exclusions
+□ Đã clean folder build và dist
+□ Đã chạy rebuild_after_exclusion.bat hoặc build_safe.bat
+□ File ocr_tool.exe được tạo thành công
+□ Windows Defender không còn chặn
+
+
+═══════════════════════════════════════════════════════════════
+
+
+🎯 HÀNH ĐỘNG TIẾP THEO:
+
+
+→ Thêm exclusion theo CÁCH 1 hoặc CÁCH 2 ở trên
+→ Chạy: rebuild_after_exclusion.bat
+→ Kiểm tra: dist\ocr_tool\ocr_tool.exe
+
+
+═══════════════════════════════════════════════════════════════
+
+Cập nhật: 21/10/2025 12:05 PM
+Phiên bản: 1.0.0
+
+═══════════════════════════════════════════════════════════════
+

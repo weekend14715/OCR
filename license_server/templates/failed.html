@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán thất bại - Vietnamese OCR Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .failed-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 60px 40px;
+            text-align: center;
+            animation: shake 0.5s ease-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .failed-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .failed-icon svg {
+            width: 50px;
+            height: 50px;
+            stroke: white;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #2d3436;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #636e72;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .error-box {
+            background: #ffebee;
+            border-left: 4px solid #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .error-box h3 {
+            color: #c0392b;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .error-box p {
+            color: #636e72;
+            line-height: 1.6;
+        }
+
+        .reasons {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .reasons h3 {
+            color: #2d3436;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .reasons ul {
+            margin-left: 20px;
+            color: #636e72;
+        }
+
+        .reasons li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .retry-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .home-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .home-btn:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .support-info {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+            color: #636e72;
+            font-size: 14px;
+        }
+
+        .support-info a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .support-info .phone {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .failed-container {
+                padding: 40px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .retry-btn, .home-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="failed-container">
+        <div class="failed-icon">
+            <svg viewBox="0 0 52 52">
+                <line x1="16" y1="16" x2="36" y2="36"/>
+                <line x1="36" y1="16" x2="16" y2="36"/>
+            </svg>
+        </div>
+
+        <h1>😔 Thanh toán thất bại</h1>
+        <p class="subtitle">Rất tiếc, giao dịch của bạn không thành công.<br>Vui lòng thử lại hoặc liên hệ hỗ trợ.</p>
+
+        <div class="error-box">
+            <h3>⚠️ Có thể do một trong các lý do sau:</h3>
+            <p>Giao dịch bị hủy hoặc không được xác nhận từ ngân hàng/ví điện tử của bạn.</p>
+        </div>
+
+        <div class="reasons">
+            <h3>🔍 Các nguyên nhân thường gặp:</h3>
+            <ul>
+                <li>Số dư tài khoản không đủ</li>
+                <li>Thông tin thẻ không chính xác</li>
+                <li>Bạn đã hủy giao dịch</li>
+                <li>Ngân hàng từ chối giao dịch</li>
+                <li>Kết nối mạng bị gián đoạn</li>
+                <li>Hạn mức giao dịch đã vượt quá</li>
+            </ul>
+        </div>
+
+        <div class="button-group">
+            <a href="/" class="retry-btn">🔄 Thử lại</a>
+            <a href="/" class="home-btn">🏠 Về trang chủ</a>
+        </div>
+
+        <div class="support-info">
+            <p>Cần hỗ trợ? Chúng tôi sẵn sàng giúp đỡ!</p>
+            <p style="margin-top: 15px;">
+                Email: <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a>
+            </p>
+            <a href="tel:0123456789" class="phone">📞 0123 456 789</a>
+            <p style="margin-top: 20px; font-size: 12px; color: #95a5a6;">
+                Thời gian hỗ trợ: 8:00 - 22:00 (Thứ 2 - Chủ nhật)
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-redirect after 30 seconds
+        setTimeout(() => {
+            if (confirm('Bạn có muốn quay về trang chủ không?')) {
+                window.location.href = '/';
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
+

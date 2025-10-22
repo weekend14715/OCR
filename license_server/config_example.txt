@@ -1,0 +1,24 @@
+# License Server Configuration Example
+# Copy values này vào app.py hoặc dùng environment variables
+
+# Admin API Key - MUST CHANGE THIS!
+ADMIN_API_KEY = "your-super-secret-admin-key-here"
+
+# Database Configuration
+DATABASE = "licenses.db"
+
+# Flask Configuration  
+DEBUG = True  # Set False in production
+HOST = "0.0.0.0"
+PORT = 5000
+
+# Business Information (update in index.html)
+BUSINESS_NAME = "Vietnamese OCR Tool"
+BUSINESS_EMAIL = "support@ocrvietnamese.com"
+BUSINESS_PHONE = "0123456789"
+
+# Pricing (update in index.html)
+MONTHLY_PRICE = "99,000₫"
+YEARLY_PRICE = "799,000₫"
+LIFETIME_PRICE = "1,999,000₫"
+

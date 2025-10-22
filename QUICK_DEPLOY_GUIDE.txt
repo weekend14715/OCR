@@ -1,0 +1,376 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║        🚀 DEPLOY LICENSE SERVER LÊN RENDER.COM                 ║
+║           HƯỚNG DẪN NHANH - 10 PHÚT XONG!                      ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+📋 CHUẨN BỊ
+
+✅ GitHub account: weekend14715
+✅ GitHub repo: https://github.com/weekend14715/OCR
+✅ Render.com account (đăng ký miễn phí)
+✅ 2 Gmail accounts với App Passwords
+
+════════════════════════════════════════════════════════════════
+
+🔥 BƯỚC 1: PUSH CODE LÊN GITHUB (2 phút)
+
+Command:
+
+   git add .
+   git commit -m "Add Render deployment config"
+   git push origin main
+
+Verify:
+   
+   Vào https://github.com/weekend14715/OCR
+   → Thấy các files mới:
+      ✅ license_server/render.yaml
+      ✅ license_server/start.sh
+      ✅ .gitignore
+
+   ⚠️  Đảm bảo KHÔNG THẤY:
+      ❌ license_server/email_config.py (đã bị gitignore)
+
+════════════════════════════════════════════════════════════════
+
+🚀 BƯỚC 2: TẠO SERVICE TRÊN RENDER (3 phút)
+
+2.1. Vào Render.com:
+
+   https://render.com
+   → Login (hoặc Sign up)
+
+2.2. Connect GitHub:
+
+   Dashboard → New + → Web Service
+   → Connect account (authorize GitHub)
+   → Chọn repo "weekend14715/OCR"
+   → Click "Connect"
+
+2.3. Cấu hình Service:
+
+   ┌─────────────────────────────────────┐
+   │ Name: ocr-license-server            │
+   │ Region: Oregon (US West)            │
+   │ Branch: main                        │
+   │ Root Directory: license_server      │ ⚠️ QUAN TRỌNG!
+   │                                     │
+   │ Runtime: Python 3                   │
+   │ Build Command:                      │
+   │   pip install -r requirements.txt   │
+   │ Start Command:                      │
+   │   bash start.sh                     │
+   │                                     │
+   │ Instance Type: Free                 │
+   │ Auto-Deploy: ✓ Yes                  │
+   └─────────────────────────────────────┘
+
+   → Click "Create Web Service"
+
+════════════════════════════════════════════════════════════════
+
+⚙️ BƯỚC 3: ADD ENVIRONMENT VARIABLES (3 phút)
+
+Vào tab "Environment" → Add từng cặp sau:
+
+┌─────────────────────────────────────────────────────────┐
+│ 🔐 ADMIN                                                │
+├─────────────────────────────────────────────────────────┤
+│ Key: ADMIN_API_KEY                                      │
+│ Value: ocr_admin_2024_xyz123  ⚠️ Đổi key mạnh của bạn!  │
+│                                                         │
+│ Key: FLASK_ENV                                          │
+│ Value: production                                       │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ 📧 EMAIL ACCOUNT 1                                      │
+├─────────────────────────────────────────────────────────┤
+│ Key: EMAIL_ACCOUNT_1                                    │
+│ Value: ocrtool.license@gmail.com                        │
+│                                                         │
+│ Key: EMAIL_PASSWORD_1                                   │
+│ Value: gjxhqhqrflvjzurg  ⚠️ BỎ DẤU CÁCH!                │
+│                                                         │
+│ Key: EMAIL_LIMIT_1                                      │
+│ Value: 500                                              │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ 📧 EMAIL ACCOUNT 2                                      │
+├─────────────────────────────────────────────────────────┤
+│ Key: EMAIL_ACCOUNT_2                                    │
+│ Value: ocrtool.system@gmail.com                         │
+│                                                         │
+│ Key: EMAIL_PASSWORD_2                                   │
+│ Value: xjoqoaedkwzjfvxj  ⚠️ BỎ DẤU CÁCH!                │
+│                                                         │
+│ Key: EMAIL_LIMIT_2                                      │
+│ Value: 500                                              │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│ 📧 EMAIL SETTINGS                                       │
+├─────────────────────────────────────────────────────────┤
+│ Key: EMAIL_FROM_NAME                                    │
+│ Value: OCR Tool License                                 │
+│                                                         │
+│ Key: EMAIL_SUPPORT                                      │
+│ Value: hoangtuan.th484@gmail.com                        │
+└─────────────────────────────────────────────────────────┘
+
+⚠️  Chi tiết đầy đủ: Xem file setup_env_vars.txt
+
+Sau khi add xong → Click "Save Changes"
+→ Render sẽ tự động deploy lại!
+
+════════════════════════════════════════════════════════════════
+
+✅ BƯỚC 4: VERIFY DEPLOYMENT (2 phút)
+
+4.1. Check Logs:
+
+   Tab "Logs" → Tìm:
+   
+   ✅ ==> Building...
+   ✅ ==> Installing dependencies...
+   ✅ 🚀 Starting OCR License Server...
+   ✅ 📦 Initializing database...
+   ✅ 🌐 Starting Gunicorn server...
+   ✅ Your service is live 🎉
+
+4.2. Get URL:
+
+   Ở đầu trang thấy:
+   
+   https://ocr-license-server.onrender.com
+   
+   Copy URL này!
+
+4.3. Test API:
+
+   Open browser hoặc dùng curl:
+
+   # Test health
+   https://ocr-license-server.onrender.com/api/health
+
+   Response:
+   {
+     "status": "ok",
+     "message": "License Server is running"
+   }
+
+   # Test web interface
+   https://ocr-license-server.onrender.com/
+
+   → Thấy trang mua license! 🎉
+
+════════════════════════════════════════════════════════════════
+
+🎯 URL QUAN TRỌNG
+
+Sau khi deploy, bạn có các URLs:
+
+┌─────────────────────────────────────────────────────────┐
+│ 🌐 Web Interface (Khách hàng mua license)              │
+│    https://ocr-license-server.onrender.com/            │
+│                                                         │
+│ 📋 API Endpoints:                                       │
+│    /api/health         - Health check                   │
+│    /api/plans          - Xem các gói                    │
+│    /api/validate       - Validate license               │
+│    /api/activate       - Activate license               │
+│                                                         │
+│ 💳 Payment:                                             │
+│    /api/payment/create - Tạo payment                    │
+│    /vnpay/return       - VNPay callback                 │
+│    /momo/return        - MoMo callback                  │
+│    /zalopay/callback   - ZaloPay callback               │
+│                                                         │
+│ 🔧 Admin (cần API key):                                │
+│    /admin              - Admin dashboard                │
+│    /admin/api/licenses - Quản lý licenses               │
+└─────────────────────────────────────────────────────────┘
+
+════════════════════════════════════════════════════════════════
+
+🔄 UPDATE CODE SAU NÀY
+
+Khi có thay đổi code:
+
+   # 1. Edit code
+   # 2. Commit
+   git add .
+   git commit -m "Update features"
+   
+   # 3. Push
+   git push origin main
+   
+   # 4. Render tự động deploy! 🎉
+   
+   Không cần làm gì thêm!
+
+════════════════════════════════════════════════════════════════
+
+💾 ADD PERSISTENT DISK (Để lưu database)
+
+⚠️  QUAN TRỌNG: Free tier mặc định không lưu data!
+
+Để lưu database licenses.db:
+
+1. Vào tab "Disks"
+2. Click "Add Disk"
+   
+   ┌──────────────────────────────────┐
+   │ Name: license-db                 │
+   │ Mount Path:                      │
+   │   /opt/render/project/src        │
+   │ Size: 1 GB                       │
+   └──────────────────────────────────┘
+   
+3. Click "Save"
+4. Service sẽ restart
+
+Giờ database sẽ được lưu vĩnh viễn!
+
+════════════════════════════════════════════════════════════════
+
+🧪 TEST EMAIL SENDING
+
+Test gửi email từ deployed server:
+
+Method 1: Qua API
+
+   curl -X POST \
+     https://ocr-license-server.onrender.com/test/email \
+     -H "X-API-Key: your-admin-key" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "to_email": "your-email@gmail.com",
+       "license_key": "TEST-1234-5678-ABCD"
+     }'
+
+Method 2: Thực tế mua license
+
+   Vào https://ocr-license-server.onrender.com/
+   → Chọn gói
+   → Thanh toán (test)
+   → Check email!
+
+════════════════════════════════════════════════════════════════
+
+📊 MONITOR
+
+Xem metrics:
+
+   Dashboard → Service → Metrics tab
+
+   Thấy:
+   - CPU Usage
+   - Memory Usage
+   - Request Rate
+   - Response Time
+
+Xem logs real-time:
+
+   Dashboard → Service → Logs tab
+
+════════════════════════════════════════════════════════════════
+
+💰 COSTS
+
+Free Tier:
+
+   ✅ 750 hours/month (đủ cho 1 service 24/7)
+   ✅ 512MB RAM
+   ✅ 0.1 CPU
+   ✅ 100GB bandwidth
+   ⚠️  Auto-sleep sau 15 phút không dùng
+   ⚠️  Cold start ~30s khi wake up
+
+Starter ($7/month):
+
+   ✅ Always-on (không sleep)
+   ✅ 512MB RAM
+   ✅ 0.5 CPU
+   ✅ Faster
+   ✅ No cold starts
+
+════════════════════════════════════════════════════════════════
+
+🔒 SECURITY
+
+✅ HTTPS tự động (Render cung cấp SSL)
+✅ Environment variables encrypted
+✅ .gitignore bảo vệ sensitive files
+✅ Admin API key protected
+✅ Database không public
+
+⚠️  Nhớ đổi ADMIN_API_KEY thành key mạnh!
+
+════════════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING
+
+Lỗi: Build failed
+→ Check requirements.txt có đầy đủ dependencies
+→ Check Python version
+
+Lỗi: Start command failed
+→ Verify Root Directory = license_server
+→ Verify Start Command = bash start.sh
+
+Lỗi: Email không gửi
+→ Check environment variables
+→ App Password phải BỎ DẤU CÁCH!
+→ Check logs: "Email configuration loaded"
+
+Lỗi: Database không lưu
+→ Add Persistent Disk (xem section trên)
+
+Service keeps restarting
+→ Check logs để xem error
+→ Có thể out of memory (upgrade plan)
+
+════════════════════════════════════════════════════════════════
+
+📚 TÀI LIỆU CHI TIẾT
+
+Đọc đầy đủ:
+   📖 DEPLOY_RENDER.md       - Hướng dẫn chi tiết
+   ⚙️  setup_env_vars.txt     - Danh sách env vars
+
+════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST
+
+[ ] Push code lên GitHub
+[ ] Tạo Render account
+[ ] Connect GitHub
+[ ] Tạo Web Service
+[ ] Set environment variables (11 required)
+[ ] Add Persistent Disk
+[ ] Deploy thành công
+[ ] Test /api/health
+[ ] Test web interface
+[ ] Test email sending
+
+════════════════════════════════════════════════════════════════
+
+🎉 XONG! URL CỦA BẠN:
+
+https://ocr-license-server.onrender.com/
+
+→ Share link này cho khách hàng để mua license!
+
+════════════════════════════════════════════════════════════════
+
+🆘 CẦN GIÚP?
+
+Email: hoangtuan.th484@gmail.com
+GitHub: https://github.com/weekend14715/OCR
+
+════════════════════════════════════════════════════════════════
+

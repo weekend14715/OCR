@@ -1,0 +1,76 @@
+╔════════════════════════════════════════════════════════════════╗
+║                   🚀 DEPLOY NGAY - 4 LỆNH                      ║
+╚════════════════════════════════════════════════════════════════╝
+
+📋 BẠN CÓ GITHUB VÀ RENDER.COM
+
+════════════════════════════════════════════════════════════════
+
+⚡ BƯỚC 1: PUSH LÊN GITHUB (30 giây)
+
+   git add .
+   git commit -m "Add Render deployment"
+   git push origin main
+
+   Verify: https://github.com/weekend14715/OCR
+
+════════════════════════════════════════════════════════════════
+
+⚡ BƯỚC 2: TẠO SERVICE TRÊN RENDER (2 phút)
+
+   1. Vào: https://render.com
+   2. New + → Web Service
+   3. Connect: weekend14715/OCR
+   4. Configure:
+      Name: ocr-license-server
+      Root Directory: license_server  ⚠️
+      Build: pip install -r requirements.txt
+      Start: bash start.sh
+   5. Create Web Service
+
+════════════════════════════════════════════════════════════════
+
+⚡ BƯỚC 3: ADD ENV VARS (2 phút)
+
+   Tab "Environment" → Add từng cặp:
+
+   ADMIN_API_KEY = <strong-password>
+   FLASK_ENV = production
+   
+   EMAIL_ACCOUNT_1 = ocrtool.license@gmail.com
+   EMAIL_PASSWORD_1 = gjxhqhqrflvjzurg
+   EMAIL_LIMIT_1 = 500
+   
+   EMAIL_ACCOUNT_2 = ocrtool.system@gmail.com
+   EMAIL_PASSWORD_2 = xjoqoaedkwzjfvxj
+   EMAIL_LIMIT_2 = 500
+   
+   EMAIL_FROM_NAME = OCR Tool License
+   EMAIL_SUPPORT = hoangtuan.th484@gmail.com
+
+   Click "Save Changes"
+
+════════════════════════════════════════════════════════════════
+
+⚡ BƯỚC 4: ADD DISK & TEST (1 phút)
+
+   1. Tab "Disks" → Add Disk
+      Name: license-db
+      Mount: /opt/render/project/src
+      Size: 1 GB
+   
+   2. Test:
+      https://ocr-license-server.onrender.com/api/health
+   
+   3. DONE! 🎉
+
+════════════════════════════════════════════════════════════════
+
+📖 CHI TIẾT: QUICK_DEPLOY_GUIDE.txt
+
+════════════════════════════════════════════════════════════════
+
+🎯 YOUR URL: https://ocr-license-server.onrender.com/
+
+════════════════════════════════════════════════════════════════
+

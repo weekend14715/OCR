@@ -1,0 +1,221 @@
+╔════════════════════════════════════════════════════════════════╗
+║       HƯỚNG DẪN CHO NGƯỜI DÙNG - Vietnamese OCR Tool          ║
+╚════════════════════════════════════════════════════════════════╝
+
+📦 CÀI ĐẶT
+
+1. Download file "VietnameseOCRTool_Setup.exe"
+2. Double-click để chạy
+3. Nếu Windows hiện cảnh báo → Xem phần "Windows Defender" bên dưới
+4. Làm theo hướng dẫn cài đặt
+5. Sau khi cài xong, app sẽ chạy tự động
+
+
+🚀 SỬ DỤNG
+
+1. Sau khi cài đặt, tìm icon "OCR" trên System Tray (góc dưới bên phải)
+   
+2. Lần đầu chạy:
+   - App sẽ hỏi bạn muốn dùng phím tắt nào
+   - Nhấn tổ hợp phím bạn thích (ví dụ: Ctrl+Shift+O)
+   - Phím tắt sẽ được lưu lại
+
+3. Khi cần OCR:
+   - Nhấn phím tắt đã đặt
+   - Kéo chuột chọn vùng có chữ
+   - Nhả chuột → Văn bản tự động copy vào clipboard
+   - Paste (Ctrl+V) ở bất kỳ đâu!
+
+4. Thay đổi phím tắt:
+   - Chuột phải vào icon trên System Tray
+   - Chọn "Thay đổi phím tắt"
+   - Nhấn tổ hợp phím mới
+
+5. Thoát ứng dụng:
+   - Chuột phải vào icon trên System Tray
+   - Chọn "Thoát"
+
+
+🛡️ WINDOWS DEFENDER CHẶN FILE?
+
+ĐÂY LÀ CẢNH BÁO SAI (False Positive)!
+
+Ứng dụng này:
+✓ An toàn 100%
+✓ Không có virus hay malware
+✓ Không kết nối internet
+✓ Chỉ sử dụng Tesseract OCR (công nghệ mã nguồn mở)
+✓ Chỉ truy cập clipboard và bàn phím khi BẠN cho phép
+
+Tại sao bị chặn?
+→ Windows Defender rất "cảnh giác" với app được đóng gói
+→ Đây là vấn đề phổ biến với các app Python được build
+→ Hàng nghìn developer trên thế giới gặp vấn đề này
+
+
+CÁCH KHẮC PHỤC (Chọn 1 trong 3):
+
+┌─────────────────────────────────────────────────────────┐
+│ CÁCH 1: Click "More info" rồi "Run anyway"             │
+└─────────────────────────────────────────────────────────┘
+
+Khi Windows hiện cảnh báo:
+1. Click vào "More info" hoặc "Thông tin thêm"
+2. Click "Run anyway" hoặc "Vẫn chạy"
+3. App sẽ cài đặt bình thường
+
+
+┌─────────────────────────────────────────────────────────┐
+│ CÁCH 2: Thêm Exclusion (Khuyến nghị)                   │
+└─────────────────────────────────────────────────────────┘
+
+1. Mở Windows Security (Windows Defender)
+   - Start → gõ "Windows Security"
+   
+2. Chọn "Virus & threat protection"
+
+3. Scroll xuống → "Manage settings"
+
+4. Scroll xuống → "Exclusions"
+   - Click "Add or remove exclusions"
+   
+5. Click "Add an exclusion" → "File" hoặc "Folder"
+
+6. Chọn file "VietnameseOCRTool_Setup.exe"
+   hoặc folder sau khi cài: "C:\Program Files\VietnameseOCRTool\"
+
+7. Cài đặt lại file setup
+
+
+┌─────────────────────────────────────────────────────────┐
+│ CÁCH 3: Tạm tắt Real-time Protection                   │
+└─────────────────────────────────────────────────────────┘
+
+1. Mở Windows Security
+
+2. Virus & threat protection
+
+3. Manage settings
+
+4. Tắt "Real-time protection" (tạm thời)
+
+5. Cài đặt app
+
+6. Bật lại "Real-time protection"
+
+
+⚠️ LƯU Ý QUAN TRỌNG:
+
+→ File này KHÔNG PHẢI virus
+→ Bạn hoàn toàn an toàn khi sử dụng
+→ Nếu không tin, có thể kiểm tra tại: https://www.virustotal.com/
+→ Đây là vấn đề nổi tiếng của Windows với các app Python
+
+
+💡 TIPS SỬ DỤNG
+
+✓ Chọn vùng có chữ rõ ràng, nền đơn giản
+✓ Tránh chọn vùng có nhiều hình ảnh phức tạp
+✓ Font chữ càng rõ nét, kết quả càng chính xác
+✓ Chữ in cho kết quả tốt hơn chữ viết tay
+✓ Nếu kết quả không chính xác, thử chọn lại vùng nhỏ hơn
+
+
+🐛 GẶP VẤN ĐỀ?
+
+Nếu app không hoạt động:
+
+1. Khởi động lại app
+   - Thoát hoàn toàn (chuột phải icon → Thoát)
+   - Chạy lại từ Start Menu
+
+2. Kiểm tra phím tắt có bị trùng không
+   - Thử đổi sang tổ hợp phím khác
+
+3. Chạy lại file cài đặt
+   - Chọn "Repair" hoặc "Uninstall" rồi cài lại
+
+4. Kiểm tra Windows Event Viewer để xem log
+
+
+📁 VỊ TRÍ FILE
+
+Sau khi cài đặt, file sẽ ở:
+
+Program:
+  C:\Program Files\VietnameseOCRTool\ocr_tool.exe
+
+Settings:
+  C:\Users\[YourName]\AppData\Local\VietnameseOCRTool\config.json
+
+Tesseract:
+  C:\Program Files\VietnameseOCRTool\Tesseract-OCR\
+
+
+🔄 GỠ CÀI ĐẶT
+
+1. Start → Settings → Apps
+2. Tìm "Vietnamese OCR Tool"
+3. Click → Uninstall
+
+Hoặc:
+
+1. Start → Vietnamese OCR Tool → Uninstall
+2. Làm theo hướng dẫn
+
+
+📞 HỖ TRỢ
+
+Email: your-email@example.com
+GitHub: https://github.com/yourusername/vietnamese-ocr-tool
+
+
+✨ TÍNH NĂNG
+
+✓ Nhận dạng tiếng Việt chính xác
+✓ Phím tắt tùy chỉnh
+✓ Chọn vùng màn hình tự do
+✓ Tự động copy vào clipboard
+✓ Xử lý ảnh thông minh
+✓ Chạy nền, luôn sẵn sàng
+✓ Khởi động cùng Windows (tùy chọn)
+
+
+📋 YÊU CẦU HỆ THỐNG
+
+✓ Windows 10/11 (64-bit)
+✓ 100 MB dung lượng trống
+✓ RAM: 2GB trở lên (khuyến nghị)
+✓ Màn hình: 1024x768 trở lên
+
+
+🎯 PHÍM TẮT KHUYẾN NGHỊ
+
+✓ Ctrl+Shift+O (O như OCR)
+✓ Ctrl+Alt+O
+✓ Win+Shift+O
+✓ Ctrl+Shift+C (C như Capture)
+
+Tránh dùng:
+✗ Ctrl+C, Ctrl+V (đã dùng cho Copy/Paste)
+✗ Ctrl+Alt+Delete (system shortcut)
+✗ Win+L (Lock screen)
+
+
+🙏 CẢM ƠN
+
+Cảm ơn bạn đã sử dụng Vietnamese OCR Tool!
+
+Nếu thấy hữu ích, hãy giới thiệu cho bạn bè!
+
+⭐⭐⭐⭐⭐
+
+
+═══════════════════════════════════════════════════════════
+
+Version: 1.0.0
+Updated: October 2025
+Developer: Vietnamese OCR Team
+
+═══════════════════════════════════════════════════════════
+

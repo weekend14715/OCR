@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - License Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-box.success {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .result-box.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9ff;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge.active {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge.inactive {
+            background: #dc3545;
+            color: white;
+        }
+
+        .badge.lifetime {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .badge.yearly {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .badge.monthly {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-button {
+            padding: 5px 15px;
+            font-size: 0.9em;
+            background: #dc3545;
+            margin: 0;
+        }
+
+        .license-key {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .license-key:hover {
+            background: #e0e0e0;
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 20px;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="copy-notification" id="copyNotification">
+        ✓ Đã copy vào clipboard!
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🔐 Admin Panel - License Management</h1>
+            <p>Vietnamese OCR Tool License Server</p>
+        </header>
+
+        <!-- Stats Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalLicenses">-</div>
+                <div class="stat-label">Tổng Licenses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activatedLicenses">-</div>
+                <div class="stat-label">Đã Kích Hoạt</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeLicenses">-</div>
+                <div class="stat-label">Đang Hoạt Động</div>
+            </div>
+        </div>
+
+        <!-- Generate License Panel -->
+        <div class="panel">
+            <h2>🎫 Tạo License Mới</h2>
+            <div class="grid-2col">
+                <div class="form-group">
+                    <label for="planType">Loại Gói:</label>
+                    <select id="planType">
+                        <option value="lifetime">Lifetime (Trọn đời)</option>
+                        <option value="yearly">Yearly (1 năm)</option>
+                        <option value="monthly">Monthly (1 tháng)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Số Lượng:</label>
+                    <input type="number" id="quantity" value="1" min="1" max="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Khách Hàng (Tùy chọn):</label>
+                <input type="email" id="email" placeholder="customer@example.com">
+            </div>
+            <div class="form-group">
+                <label for="adminKey">Admin API Key:</label>
+                <input type="password" id="adminKey" placeholder="Nhập admin API key">
+            </div>
+            <button onclick="generateLicense()">🎁 Tạo License</button>
+            
+            <div class="result-box" id="generateResult"></div>
+        </div>
+
+        <!-- License List Panel -->
+        <div class="panel">
+            <h2>📋 Danh Sách Licenses</h2>
+            <button onclick="loadLicenses()">🔄 Làm Mới Danh Sách</button>
+            
+            <div id="licenseTableContainer">
+                <div class="loading">Đang tải...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        // Load statistics
+        async function loadStats() {
+            const adminKey = document.getElementById('adminKey').value;
+            if (!adminKey) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/stats`, {
+                    headers: {
+                        'X-Admin-Key': adminKey
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalLicenses').textContent = data.total_licenses;
+                    document.getElementById('activatedLicenses').textContent = data.activated;
+                    document.getElementById('activeLicenses').textContent = data.active;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Generate license
+        async function generateLicense() {
+            const adminKey = document.getElementById('adminKey').value;
+            const planType = document.getElementById('planType').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const email = document.getElementById('email').value;
+            const resultBox = document.getElementById('generateResult');
+
+            if (!adminKey) {
+                showResult(resultBox, 'error', '⚠️ Vui lòng nhập Admin API Key!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({
+                        plan_type: planType,
+                        quantity: quantity,
+                        email: email || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    let html = `<strong>✅ Đã tạo ${data.quantity} license thành công!</strong><br><br>`;
+                    html += '<strong>License Keys:</strong><br>';
+                    data.licenses.forEach(key => {
+                        html += `<div class="license-key" onclick="copyToClipboard('${key}')">${key}</div>`;
+                    });
+                    html += '<br><small>Click vào key để copy</small>';
+                    showResult(resultBox, 'success', html);
+                    loadStats();
+                    loadLicenses();
+                } else {
+                    showResult(resultBox, 'error', `❌ Lỗi: ${data.error}`);
+                }
+            } catch (error) {
+                showResult(resultBox, 'error', `❌ Lỗi kết nối: ${error.message}`);
+            }
+        }
+
+        // Load licenses
+        async function loadLicenses() {
+            const adminKey = document.getElementById('adminKey').value;
+            const container = document.getElementById('licenseTableContainer');
+
+            if (!adminKey) {
+                container.innerHTML = '<p style="color: #dc3545;">⚠️ Vui lòng nhập Admin API Key để xem danh sách</p>';
+                return;
+            }
+
+            container.innerHTML = '<div class="loading">Đang tải...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/licenses`, {
+                    headers: {
+                        'X-Admin-Key': adminKey
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayLicenses(data.licenses);
+                } else {
+                    container.innerHTML = '<p style="color: #dc3545;">❌ Không thể tải danh sách. Kiểm tra API Key.</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<p style="color: #dc3545;">❌ Lỗi: ${error.message}</p>`;
+            }
+        }
+
+        // Display licenses in table
+        function displayLicenses(licenses) {
+            const container = document.getElementById('licenseTableContainer');
+
+            if (licenses.length === 0) {
+                container.innerHTML = '<p>Chưa có license nào.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            html += '<th>License Key</th>';
+            html += '<th>Email</th>';
+            html += '<th>Plan</th>';
+            html += '<th>Trạng Thái</th>';
+            html += '<th>Kích Hoạt</th>';
+            html += '<th>Hết Hạn</th>';
+            html += '<th>Hành Động</th>';
+            html += '</tr></thead><tbody>';
+
+            licenses.forEach(license => {
+                html += '<tr>';
+                html += `<td><span class="license-key" onclick="copyToClipboard('${license.license_key}')">${license.license_key}</span></td>`;
+                html += `<td>${license.email || '-'}</td>`;
+                html += `<td><span class="badge ${license.plan_type}">${license.plan_type}</span></td>`;
+                html += `<td><span class="badge ${license.is_active ? 'active' : 'inactive'}">${license.is_active ? 'Active' : 'Inactive'}</span></td>`;
+                html += `<td>${license.activation_date ? new Date(license.activation_date).toLocaleDateString('vi-VN') : '-'}</td>`;
+                html += `<td>${license.expiry_date ? new Date(license.expiry_date).toLocaleDateString('vi-VN') : 'Vĩnh viễn'}</td>`;
+                html += `<td>${license.is_active ? `<button class="action-button" onclick="deactivateLicense('${license.license_key}')">Vô hiệu hóa</button>` : '-'}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Deactivate license
+        async function deactivateLicense(licenseKey) {
+            const adminKey = document.getElementById('adminKey').value;
+
+            if (!confirm(`Bạn có chắc muốn vô hiệu hóa license: ${licenseKey}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/deactivate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({
+                        license_key: licenseKey
+                    })
+                });
+
+                if (response.ok) {
+                    alert('✅ Đã vô hiệu hóa license thành công!');
+                    loadStats();
+                    loadLicenses();
+                } else {
+                    alert('❌ Không thể vô hiệu hóa license');
+                }
+            } catch (error) {
+                alert(`❌ Lỗi: ${error.message}`);
+            }
+        }
+
+        // Helper functions
+        function showResult(element, type, message) {
+            element.className = `result-box ${type}`;
+            element.innerHTML = message;
+            element.style.display = 'block';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const notification = document.getElementById('copyNotification');
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            });
+        }
+
+        // Auto-load when admin key is entered
+        document.getElementById('adminKey').addEventListener('change', () => {
+            loadStats();
+            loadLicenses();
+        });
+
+        // Initial load
+        window.onload = () => {
+            loadStats();
+            loadLicenses();
+        };
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,45 @@
+# ============================================================================
+# SENSITIVE FILES - DO NOT COMMIT TO GIT
+# ============================================================================
+
+# Email configuration (contains App Passwords)
+email_config.py
+
+# Email usage tracking
+email_usage.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+config.*.old
+

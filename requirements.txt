@@ -1,0 +1,7 @@
+keyboard
+Pillow
+pytesseract
+pyperclip
+pystray
+numpy
+

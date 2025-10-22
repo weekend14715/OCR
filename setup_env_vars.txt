@@ -1,0 +1,193 @@
+# ========================================================================
+# ENVIRONMENT VARIABLES FOR RENDER.COM
+# Copy paste từng dòng vào Render Dashboard → Environment tab
+# ========================================================================
+
+# HƯỚNG DẪN:
+# 1. Đăng nhập Render.com
+# 2. Vào service của bạn (ocr-license-server)
+# 3. Click tab "Environment"
+# 4. Click "Add Environment Variable"
+# 5. Copy-paste từng cặp Key-Value dưới đây
+# 6. Click "Save Changes" → Render sẽ auto redeploy
+
+# ========================================================================
+# 🔐 ADMIN CONFIGURATION
+# ========================================================================
+
+Key: ADMIN_API_KEY
+Value: ocr_admin_2024_secure_key_xyz123
+# ⚠️ ĐỔI VALUE NÀY! Dùng password generator để tạo key mạnh
+
+Key: FLASK_ENV
+Value: production
+
+# ========================================================================
+# 📧 EMAIL CONFIGURATION - ACCOUNT 1
+# ========================================================================
+
+Key: EMAIL_ACCOUNT_1
+Value: ocrtool.license@gmail.com
+
+Key: EMAIL_PASSWORD_1
+Value: gjxhqhqrflvjzurg
+# ⚠️ BỎ HẾT DẤU CÁCH! (không có dấu cách giữa các ký tự)
+# App Password gốc: gjxh qhqr flvj zurg
+# Paste vào: gjxhqhqrflvjzurg
+
+Key: EMAIL_LIMIT_1
+Value: 500
+
+# ========================================================================
+# 📧 EMAIL CONFIGURATION - ACCOUNT 2
+# ========================================================================
+
+Key: EMAIL_ACCOUNT_2
+Value: ocrtool.system@gmail.com
+
+Key: EMAIL_PASSWORD_2
+Value: xjoqoaedkwzjfvxj
+# ⚠️ BỎ HẾT DẤU CÁCH!
+# App Password gốc: xjoq oaed kwzj fvxj
+# Paste vào: xjoqoaedkwzjfvxj
+
+Key: EMAIL_LIMIT_2
+Value: 500
+
+# ========================================================================
+# 📧 EMAIL GENERAL SETTINGS
+# ========================================================================
+
+Key: EMAIL_FROM_NAME
+Value: OCR Tool License
+
+Key: EMAIL_SUPPORT
+Value: hoangtuan.th484@gmail.com
+
+# ========================================================================
+# 💳 VNPAY CONFIGURATION (Optional - add khi có account)
+# ========================================================================
+
+Key: VNPAY_TMN_CODE
+Value: YOUR_VNPAY_CODE_HERE
+
+Key: VNPAY_HASH_SECRET
+Value: YOUR_VNPAY_SECRET_HERE
+
+Key: VNPAY_URL
+Value: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+# Production URL: https://vnpayment.vn/paymentv2/vpcpay.html
+
+# ========================================================================
+# 💳 MOMO CONFIGURATION (Optional - add khi có account)
+# ========================================================================
+
+Key: MOMO_PARTNER_CODE
+Value: YOUR_MOMO_PARTNER_CODE
+
+Key: MOMO_ACCESS_KEY
+Value: YOUR_MOMO_ACCESS_KEY
+
+Key: MOMO_SECRET_KEY
+Value: YOUR_MOMO_SECRET_KEY
+
+Key: MOMO_ENDPOINT
+Value: https://test-payment.momo.vn/v2/gateway/api/create
+# Production URL: https://payment.momo.vn/v2/gateway/api/create
+
+# ========================================================================
+# 💳 ZALOPAY CONFIGURATION (Optional - add khi có account)
+# ========================================================================
+
+Key: ZALOPAY_APP_ID
+Value: YOUR_ZALOPAY_APP_ID
+
+Key: ZALOPAY_KEY1
+Value: YOUR_ZALOPAY_KEY1
+
+Key: ZALOPAY_KEY2
+Value: YOUR_ZALOPAY_KEY2
+
+Key: ZALOPAY_ENDPOINT
+Value: https://sb-openapi.zalopay.vn/v2/create
+# Production URL: https://openapi.zalopay.vn/v2/create
+
+# ========================================================================
+# 🗄️ DATABASE CONFIGURATION
+# ========================================================================
+
+Key: DATABASE_PATH
+Value: /opt/render/project/src/licenses.db
+# ⚠️ Đảm bảo đã add Persistent Disk trên Render!
+
+# ========================================================================
+# 🌐 SERVER CONFIGURATION
+# ========================================================================
+
+Key: PORT
+Value: 10000
+# Render tự động set, không cần add manually
+
+Key: PYTHON_VERSION
+Value: 3.11.0
+
+# ========================================================================
+# 📊 SUMMARY
+# ========================================================================
+
+# TỔNG SỐ ENV VARS CẦN ADD:
+
+# ✅ REQUIRED (Minimum):
+# - ADMIN_API_KEY
+# - EMAIL_ACCOUNT_1
+# - EMAIL_PASSWORD_1
+# - EMAIL_LIMIT_1
+# - EMAIL_ACCOUNT_2
+# - EMAIL_PASSWORD_2
+# - EMAIL_LIMIT_2
+# - EMAIL_FROM_NAME
+# - EMAIL_SUPPORT
+# - FLASK_ENV
+# - PYTHON_VERSION
+
+# ⏳ OPTIONAL (Thêm sau nếu cần):
+# - VNPAY_* (3 variables)
+# - MOMO_* (4 variables)
+# - ZALOPAY_* (4 variables)
+
+# ========================================================================
+# ⚠️ QUAN TRỌNG
+# ========================================================================
+
+# 1. BỎ DẤU CÁCH trong App Password!
+#    Sai: gjxh qhqr flvj zurg
+#    Đúng: gjxhqhqrflvjzurg
+
+# 2. ĐỔI ADMIN_API_KEY!
+#    Đừng dùng default key, tạo key mạnh của riêng bạn
+
+# 3. KHÔNG COMMIT FILE NÀY LÊN GIT!
+#    File này chỉ để tham khảo khi setup Render
+
+# 4. Sau khi add xong, click "Save Changes"
+#    Render sẽ tự động redeploy service
+
+# ========================================================================
+# 🧪 VERIFY SETUP
+# ========================================================================
+
+# Sau khi deploy xong, test:
+
+# 1. Health check:
+curl https://your-service.onrender.com/api/health
+
+# 2. Get plans:
+curl https://your-service.onrender.com/api/plans
+
+# 3. Check logs:
+# Vào Render Dashboard → Logs tab
+# Tìm dòng: "✅ Email configuration loaded"
+# Tìm dòng: "🌐 Starting Gunicorn server..."
+
+# ========================================================================
+

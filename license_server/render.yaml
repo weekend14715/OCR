@@ -1,0 +1,85 @@
+# Render.com Configuration for License Server
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Web Service - License Server API
+  - type: web
+    name: ocr-license-server
+    runtime: python3
+    env: python
+    region: oregon  # Hoặc singapore nếu muốn gần VN hơn
+    plan: free  # Đổi thành 'starter' nếu cần performance tốt hơn
+    
+    # Build settings
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
+    
+    # Environment variables (sẽ được set trên Render dashboard)
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      - key: ADMIN_API_KEY
+        generateValue: true  # Render sẽ tự generate secure key
+      
+      - key: FLASK_ENV
+        value: production
+      
+      # Email config - Set manually on Render dashboard
+      - key: EMAIL_ACCOUNT_1
+        sync: false  # Manual input required
+      
+      - key: EMAIL_PASSWORD_1
+        sync: false  # Manual input required
+      
+      - key: EMAIL_ACCOUNT_2
+        sync: false  # Manual input required
+      
+      - key: EMAIL_PASSWORD_2
+        sync: false  # Manual input required
+      
+      # Payment gateway configs
+      - key: VNPAY_TMN_CODE
+        sync: false
+      
+      - key: VNPAY_HASH_SECRET
+        sync: false
+      
+      - key: MOMO_PARTNER_CODE
+        sync: false
+      
+      - key: MOMO_ACCESS_KEY
+        sync: false
+      
+      - key: MOMO_SECRET_KEY
+        sync: false
+      
+      - key: ZALOPAY_APP_ID
+        sync: false
+      
+      - key: ZALOPAY_KEY1
+        sync: false
+      
+      - key: ZALOPAY_KEY2
+        sync: false
+    
+    # Health check endpoint
+    healthCheckPath: /api/health
+    
+    # Auto-deploy settings
+    autoDeploy: true  # Auto deploy khi push lên GitHub
+    
+    # Disk storage cho SQLite database
+    disk:
+      name: license-db
+      mountPath: /opt/render/project/src
+      sizeGB: 1  # Free tier: 1GB, có thể tăng nếu trả phí
+
+# Optional: Background worker (nếu cần chạy scheduled tasks)
+# - type: worker
+#   name: ocr-license-worker
+#   runtime: python3
+#   env: python
+#   buildCommand: pip install -r requirements.txt
+#   startCommand: python worker.py
+
