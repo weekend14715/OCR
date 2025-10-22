@@ -491,13 +491,13 @@ def admin_stats():
         return jsonify({'error': str(e)}), 500
 
 # ==============================================================================
-# PAYMENT ENDPOINTS (AUTO LICENSE GENERATION)
+# PAYMENT ENDPOINTS (AUTO LICENSE GENERATION) - LEGACY
 # ==============================================================================
 
-@app.route('/api/payment/create', methods=['POST'])
-def create_payment():
+@app.route('/api/payment/create-legacy', methods=['POST'])
+def create_payment_legacy():
     """
-    Tạo payment link
+    [LEGACY] Tạo payment link cho VNPay/MoMo/ZaloPay
     POST Body: {
         "plan_type": "lifetime|yearly|monthly",
         "payment_method": "vnpay|momo|zalopay",
