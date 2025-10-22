@@ -603,6 +603,34 @@ def debug_test_email():
         }), 500
 
 
+@app.route('/api/debug/payos-config', methods=['GET'])
+def debug_payos_config():
+    """
+    🔍 Kiểm tra PayOS configuration
+    GET: /api/debug/payos-config
+    """
+    try:
+        return jsonify({
+            'payos_enabled': PAYOS_ENABLED,
+            'client_id': PAYOS_CLIENT_ID if PAYOS_CLIENT_ID else 'NOT_SET',
+            'api_key_masked': (PAYOS_API_KEY[:8] + '...' + PAYOS_API_KEY[-4:]) if PAYOS_API_KEY else 'NOT_SET',
+            'checksum_masked': (PAYOS_CHECKSUM_KEY[:8] + '...' + PAYOS_CHECKSUM_KEY[-4:]) if PAYOS_CHECKSUM_KEY else 'NOT_SET',
+            'config_status': 'OK' if (PAYOS_CLIENT_ID and PAYOS_API_KEY and PAYOS_CHECKSUM_KEY) else 'MISSING_CREDENTIALS',
+            'instructions': {
+                'step1': 'Add environment variables in Render Dashboard',
+                'step2': 'PAYOS_CLIENT_ID = 4bbbd884-88f2-410c-9dc8-6782980ef64f',
+                'step3': 'PAYOS_API_KEY = dd9f4ba8-cc6b-46e8-9afb-930972bf7531',
+                'step4': 'PAYOS_CHECKSUM_KEY = a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d'
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'payos_enabled': False
+        }), 500
+
+
 @app.route('/api/admin/stats', methods=['GET'])
 @require_admin_key
 def admin_stats():
