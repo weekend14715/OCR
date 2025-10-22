@@ -561,6 +561,48 @@ def debug_email_config():
     return jsonify(result), 200
 
 
+@app.route('/api/debug/test-email', methods=['POST'])
+def debug_test_email():
+    """
+    🧪 Test gửi email thật
+    POST: {"to_email": "test@example.com"}
+    """
+    try:
+        data = request.get_json() or {}
+        to_email = data.get('to_email', 'hoangtuan.th484@gmail.com')
+        
+        if not EMAIL_ENABLED:
+            return jsonify({
+                'success': False,
+                'error': 'EMAIL_ENABLED = False',
+                'fix': 'Check email_sender.py import'
+            }), 500
+        
+        # Thử gửi email test
+        result = send_license_email(
+            to_email=to_email,
+            license_key='TEST-1234-5678-ABCD',
+            customer_name='Test User',
+            order_id='TEST-ORDER-001',
+            plan_type='lifetime'
+        )
+        
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'account_used': result.get('account_used', 'none'),
+            'to_email': to_email
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+
 @app.route('/api/admin/stats', methods=['GET'])
 @require_admin_key
 def admin_stats():
