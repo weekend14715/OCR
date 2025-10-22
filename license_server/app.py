@@ -13,7 +13,7 @@ import uuid
 from functools import wraps
 import json
 from payment_gateway import (
-    VNPayPayment, MoMoPayment, ZaloPayPayment,
+    VNPayPayment, MoMoPayment, ZaloPayPayment, VietQRPayment,
     generate_order_id, get_plan_info
 )
 # Import Casso payment
@@ -44,6 +44,17 @@ import os
 CASSO_API_KEY = os.getenv('CASSO_API_KEY', 'dd9f4ba8-cc6b-46e8-9afb-930972bf7531')
 CASSO_BUSINESS_ID = os.getenv('CASSO_BUSINESS_ID', '4bbbd884-88f2-410c-9dc8-6782980ef64f')
 CASSO_CHECKSUM_KEY = os.getenv('CASSO_CHECKSUM_KEY', 'a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d')
+
+# Khởi tạo Casso Payment nếu có
+if CASSO_ENABLED:
+    casso = CassoPayment(
+        api_key=CASSO_API_KEY,
+        business_id=CASSO_BUSINESS_ID,
+        checksum_key=CASSO_CHECKSUM_KEY
+    )
+    print("✅ Casso Payment đã được kích hoạt!")
+else:
+    casso = None
 
 # ==============================================================================
 # DATABASE SETUP
@@ -817,7 +828,7 @@ def get_order_status(order_id):
 @app.route('/api/payment/create-order', methods=['POST'])
 def create_payment_order():
     """
-    Tạo đơn hàng mới và lấy thông tin chuyển khoản
+    Tạo đơn hàng mới và lấy thông tin chuyển khoản + VietQR
     POST: {
         "customer_email": "email@example.com",
         "plan_type": "lifetime",
@@ -850,35 +861,41 @@ def create_payment_order():
         conn.commit()
         conn.close()
         
-        # Lấy thông tin bank từ Casso (nếu có)
-        bank_info = {
-            'bank_name': 'Ngân hàng (đang cập nhật)',
-            'account_number': 'Đang cập nhật',
-            'account_name': 'Đang cập nhật'
-        }
+        # Lấy thông tin bank
+        bank_info = VietQRPayment.get_bank_info()
         
+        # Cập nhật bank info từ Casso nếu có
         if CASSO_ENABLED:
             try:
                 casso = CassoPayment(CASSO_API_KEY, CASSO_BUSINESS_ID, CASSO_CHECKSUM_KEY)
                 bank_data = casso.get_bank_info()
                 
                 if bank_data and 'data' in bank_data:
-                    # Parse bank info từ Casso response
-                    # Structure có thể khác nhau, cần xem response thật
                     bank_info = {
-                        'bank_name': bank_data.get('data', {}).get('bankName', 'MB Bank'),
-                        'account_number': bank_data.get('data', {}).get('bankAccount', '0123456789'),
-                        'account_name': bank_data.get('data', {}).get('bankAccountName', 'NGUYEN VAN A')
+                        'bank_code': bank_info.get('bank_code', 'MB'),
+                        'bank_name': bank_data.get('data', {}).get('bankName', bank_info['bank_name']),
+                        'account_number': bank_data.get('data', {}).get('bankAccount', bank_info['account_number']),
+                        'account_name': bank_data.get('data', {}).get('bankAccountName', bank_info['account_name'])
                     }
             except Exception as e:
                 print(f"⚠️ Casso bank info error: {e}")
+        
+        # Tạo VietQR URL
+        vietqr_url = VietQRPayment.generate_vietqr_url(
+            bank_code=bank_info['bank_code'],
+            account_number=bank_info['account_number'],
+            account_name=bank_info['account_name'],
+            amount=amount,
+            description=customer_email
+        )
         
         return jsonify({
             'success': True,
             'order_id': order_id,
             'bank_info': bank_info,
             'amount': amount,
-            'transfer_content': customer_email
+            'transfer_content': customer_email,
+            'vietqr_url': vietqr_url
         }), 200
         
     except Exception as e:

@@ -1,6 +1,6 @@
 """
 Payment Gateway Integration for Vietnamese OCR Tool
-Supports: VNPay, MoMo, ZaloPay
+Supports: VNPay, MoMo, ZaloPay, VietQR
 Automatically generates license after successful payment
 """
 
@@ -11,6 +11,10 @@ import requests
 import json
 from datetime import datetime
 import secrets
+import qrcode
+import io
+import base64
+from PIL import Image
 
 # ===================================
 # VNPay Configuration
@@ -55,6 +59,12 @@ ZALOPAY_CONFIG = {
 # Pricing Plans (VNĐ)
 # ===================================
 PRICING = {
+    'test': {
+        'name': 'Test Plan (1,000đ)',
+        'price': 1000,
+        'duration_days': 1,  # 1 ngày để test
+        'plan_type': 'test'
+    },
     'monthly': {
         'name': 'Monthly Plan',
         'price': 99000,
@@ -372,6 +382,88 @@ class ZaloPayPayment:
         except Exception as e:
             print(f"ZaloPay verify error: {e}")
             return False, None
+
+
+class VietQRPayment:
+    """
+    VietQR Payment Integration
+    Tạo mã QR thanh toán ngân hàng theo chuẩn VietQR
+    """
+    
+    @staticmethod
+    def generate_vietqr_url(bank_code, account_number, account_name, amount, description):
+        """
+        Tạo VietQR URL theo chuẩn của Napas
+        
+        Args:
+            bank_code: Mã ngân hàng (VD: "MB", "VCB", "TCB")
+            account_number: Số tài khoản
+            account_name: Tên chủ tài khoản
+            amount: Số tiền (VNĐ)
+            description: Nội dung chuyển khoản
+            
+        Returns:
+            VietQR URL
+        """
+        # VietQR format: https://img.vietqr.io/image/{BANK_CODE}-{ACCOUNT_NUMBER}-{TEMPLATE}.jpg?amount={AMOUNT}&addInfo={DESCRIPTION}&accountName={ACCOUNT_NAME}
+        
+        base_url = "https://img.vietqr.io/image"
+        template = "compact2"  # compact2, print, qr_only
+        
+        # URL encode description và account name
+        description_encoded = urllib.parse.quote(description)
+        account_name_encoded = urllib.parse.quote(account_name)
+        
+        vietqr_url = f"{base_url}/{bank_code}-{account_number}-{template}.jpg?" \
+                     f"amount={amount}&" \
+                     f"addInfo={description_encoded}&" \
+                     f"accountName={account_name_encoded}"
+        
+        return vietqr_url
+    
+    @staticmethod
+    def generate_qr_code_base64(bank_code, account_number, account_name, amount, description):
+        """
+        Tạo QR code dưới dạng base64 image
+        
+        Returns:
+            Base64 encoded PNG image
+        """
+        vietqr_url = VietQRPayment.generate_vietqr_url(
+            bank_code, account_number, account_name, amount, description
+        )
+        
+        # Tạo QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(vietqr_url)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        
+        return f"data:image/png;base64,{img_str}"
+    
+    @staticmethod
+    def get_bank_info():
+        """
+        Lấy thông tin ngân hàng để hiển thị
+        Thay đổi thông tin này theo tài khoản thật của bạn
+        """
+        return {
+            'bank_code': 'MB',  # MB Bank
+            'bank_name': 'MB Bank (Ngân hàng Quân Đội)',
+            'account_number': '0123456789',  # THAY ĐỔI
+            'account_name': 'NGUYEN VAN A',  # THAY ĐỔI
+        }
 
 
 def generate_order_id():

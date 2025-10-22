@@ -273,8 +273,26 @@
             <p>Công cụ nhận dạng chữ tiếng Việt tốt nhất - Nhanh, Chính xác, Tiện lợi</p>
         </header>
 
-        <div class="pricing-section" style="display: flex; justify-content: center;">
-            <!-- Lifetime Plan ONLY -->
+        <div class="pricing-section" style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+            <!-- TEST Plan - For Testing -->
+            <div class="pricing-card" style="max-width: 400px; border: 2px solid #f59e0b;">
+                <div class="popular-badge" style="background: #f59e0b;">🧪 TEST - CHỈ ĐỂ THẤM</div>
+                <div class="plan-name">Gói Test</div>
+                <div class="plan-price">1,000₫</div>
+                <div class="plan-duration">Thử nghiệm 1 ngày</div>
+                <ul class="features">
+                    <li>✅ Test chức năng đầy đủ</li>
+                    <li>✅ OCR tiếng Việt chính xác</li>
+                    <li>✅ Tự động nhận license qua email</li>
+                    <li>✅ Sử dụng 1 ngày</li>
+                    <li>⚠️ Chỉ để test hệ thống</li>
+                </ul>
+                <button class="buy-button" style="background: #f59e0b;" onclick="showPurchaseModal('test', '1,000₫')">
+                    🧪 Test Ngay - 1,000₫
+                </button>
+            </div>
+
+            <!-- Lifetime Plan -->
             <div class="pricing-card popular" style="max-width: 450px;">
                 <div class="popular-badge">⭐ GIÁ ƯU ĐÃI ĐẶC BIỆT</div>
                 <div class="plan-name">Kích Hoạt Trọn Đời</div>
@@ -355,6 +373,21 @@
             <div id="bankInfo" style="display: none; background: #f8f9ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #667eea;">
                 <h3 style="color: #667eea; margin-bottom: 15px; text-align: center;">💳 Thông Tin Chuyển Khoản</h3>
                 
+                <!-- VietQR Code -->
+                <div id="qrCodeContainer" style="text-align: center; margin-bottom: 20px;">
+                    <img id="qrCodeImage" src="" alt="VietQR Code" style="max-width: 300px; width: 100%; border: 3px solid #667eea; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <p style="margin-top: 10px; color: #667eea; font-weight: bold; font-size: 1.1em;">📱 Quét mã QR để thanh toán nhanh</p>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: #e8f5e9; border-radius: 8px;">
+                    <p style="margin: 0; color: #2e7d32; font-weight: bold;">✨ Mở app ngân hàng → Quét QR → Xác nhận thanh toán!</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #555;">Nội dung CK đã được điền sẵn trong QR!</p>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 0.9em;">────── hoặc chuyển khoản thủ công ──────</p>
+                </div>
+                
                 <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <div style="display: grid; gap: 10px; text-align: left;">
                         <div><strong>🏦 Ngân hàng:</strong> <span id="bankName">Đang tải...</span></div>
@@ -415,6 +448,7 @@
             
             // Reset state
             document.getElementById('bankInfo').style.display = 'none';
+            document.getElementById('qrCodeContainer').style.display = 'none';
             document.getElementById('createOrderBtn').style.display = 'block';
             document.getElementById('copyEmailBtn').style.display = 'none';
             document.getElementById('customerEmail').value = '';
@@ -466,11 +500,17 @@
                     document.getElementById('accountName').innerText = data.bank_info.account_name || 'Đang cập nhật';
                     document.getElementById('transferContent').innerText = email;
                     
+                    // Show VietQR code
+                    if (data.vietqr_url) {
+                        document.getElementById('qrCodeImage').src = data.vietqr_url;
+                        document.getElementById('qrCodeContainer').style.display = 'block';
+                    }
+                    
                     // Hide create button, show copy button
                     btn.style.display = 'none';
                     document.getElementById('copyEmailBtn').style.display = 'block';
                     
-                    alert('✅ Đơn hàng đã được tạo!\n\n🏦 Vui lòng chuyển khoản theo thông tin bên dưới.\n\n⚠️ LƯU Ý: Ghi email của bạn vào nội dung chuyển khoản!');
+                    alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR để thanh toán nhanh!\n\nHoặc chuyển khoản thủ công theo thông tin bên dưới.\n\n⚠️ LƯU Ý: Nội dung CK phải là email của bạn!');
                 } else {
                     alert('❌ Lỗi: ' + (data.error || 'Không thể tạo đơn hàng'));
                     btn.disabled = false;
