@@ -130,6 +130,15 @@ def index():
     """Trang chủ - Landing page bán license"""
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'OCR License Server',
+        'timestamp': datetime.datetime.now().isoformat()
+    }), 200
+
 @app.route('/admin')
 def admin():
     """Admin panel"""
