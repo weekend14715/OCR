@@ -12,12 +12,41 @@ import json
 import os
 from datetime import datetime, timedelta
 
-try:
-    from email_config import get_email_accounts, get_smtp_config, SUPPORT_EMAIL
-    EMAIL_CONFIG_AVAILABLE = True
-except ImportError:
-    EMAIL_CONFIG_AVAILABLE = False
-    print("⚠️  Warning: email_config.py not found. Email functionality disabled.")
+# Try to load email config from environment variable or file
+EMAIL_CONFIG_AVAILABLE = False
+EMAIL_ACCOUNTS = []
+SMTP_CONFIG = {}
+SUPPORT_EMAIL = "support@ocrtool.com"
+
+# Method 1: Load from Environment Variable (Production - Render)
+email_accounts_env = os.getenv('EMAIL_ACCOUNTS')
+if email_accounts_env:
+    try:
+        EMAIL_ACCOUNTS = json.loads(email_accounts_env)
+        SMTP_CONFIG = {
+            'server': 'smtp.gmail.com',
+            'port': 587,
+            'use_tls': True
+        }
+        # Get support email from first account
+        if EMAIL_ACCOUNTS:
+            SUPPORT_EMAIL = EMAIL_ACCOUNTS[0]['email']
+        EMAIL_CONFIG_AVAILABLE = True
+        print(f"[OK] Email config loaded from environment variable ({len(EMAIL_ACCOUNTS)} accounts)")
+    except Exception as e:
+        print(f"[WARNING] Could not parse EMAIL_ACCOUNTS env var: {e}")
+
+# Method 2: Fallback to email_config.py (Local development)
+if not EMAIL_CONFIG_AVAILABLE:
+    try:
+        from email_config import get_email_accounts, get_smtp_config, SUPPORT_EMAIL as SUPPORT_EMAIL_FILE
+        EMAIL_ACCOUNTS = get_email_accounts()
+        SMTP_CONFIG = get_smtp_config()
+        SUPPORT_EMAIL = SUPPORT_EMAIL_FILE
+        EMAIL_CONFIG_AVAILABLE = True
+        print(f"[OK] Email config loaded from email_config.py ({len(EMAIL_ACCOUNTS)} accounts)")
+    except ImportError:
+        print("[WARNING] No email config found (neither env var nor config file). Email functionality disabled.")
 
 
 # Tracking file for usage
@@ -55,7 +84,7 @@ def get_available_account():
     if not EMAIL_CONFIG_AVAILABLE:
         return None
     
-    accounts = get_email_accounts()
+    accounts = EMAIL_ACCOUNTS
     usage_stats = load_usage_stats()
     today = datetime.now().strftime('%Y-%m-%d')
     
@@ -129,7 +158,7 @@ def send_license_email(to_email, license_key, customer_name, order_id="", plan_t
             'account_used': 'none'
         }
     
-    smtp_config = get_smtp_config()
+    smtp_config = SMTP_CONFIG
     
     # Hiển thị thông tin plan
     plan_display = plan_type.upper() if plan_type else "LIFETIME"
@@ -146,7 +175,7 @@ def send_license_email(to_email, license_key, customer_name, order_id="", plan_t
         # Tạo email
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f'🎉 License Key OCR Tool - {plan_display}'
-        msg['From'] = f"{account.get('name', 'OCR Tool')} <{account['email']}>"
+        msg['From'] = f"{account.get('display_name', 'OCR Tool')} <{account['email']}>"
         msg['To'] = to_email
         msg['Reply-To'] = SUPPORT_EMAIL
         
@@ -226,7 +255,9 @@ def send_license_email(to_email, license_key, customer_name, order_id="", plan_t
             if smtp_config.get('use_tls', True):
                 server.starttls()
             
-            server.login(account['email'], account['password'])
+            # Use 'app_password' field from environment variable or 'password' from config file
+            password = account.get('app_password') or account.get('password')
+            server.login(account['email'], password)
             server.send_message(msg)
         
         print(f"✅ Email sent to {to_email} via {account['email']}")
