@@ -877,7 +877,7 @@ def create_payment_order():
 
 
 @app.route('/api/payment/create', methods=['POST'])
-def create_payment():
+def create_payos_payment():
     """
     Tạo QR code thanh toán PayOS
     
