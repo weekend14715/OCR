@@ -1,0 +1,86 @@
+═══════════════════════════════════════════════════════════════
+🔑 ADMIN API KEY - HƯỚNG DẪN NHANH
+═══════════════════════════════════════════════════════════════
+
+📋 ADMIN API KEY CỦA BẠN:
+───────────────────────────────────────────────────────────────
+OCR_ADMIN_MUJpeW9fPbSNuX22esEVOp1Klm0JlOjvMO_lS-OdfUE
+───────────────────────────────────────────────────────────────
+
+⚠️  LƯU Ý: Giữ key này bí mật! Đừng share cho ai!
+
+
+🚀 CÁCH CẤU HÌNH (3 BƯỚC):
+═══════════════════════════════════════════════════════════════
+
+BƯỚC 1: Vào Render Dashboard
+  → https://dashboard.render.com
+  → Chọn service: ocr-uufr
+  → Click tab "Environment"
+
+BƯỚC 2: Thêm Environment Variable
+  → Click "Add Environment Variable"
+  
+  Key:   ADMIN_API_KEY
+  Value: OCR_ADMIN_MUJpeW9fPbSNuX22esEVOp1Klm0JlOjvMO_lS-OdfUE
+  
+  → Click "Save Changes"
+
+BƯỚC 3: Đợi Redeploy
+  → Render tự động redeploy (~2-3 phút)
+  → Xem tab "Logs" để biết khi nào xong
+
+
+🎯 CÁCH SỬ DỤNG:
+═══════════════════════════════════════════════════════════════
+
+1. Vào trang admin:
+   → https://ocr-uufr.onrender.com/admin
+
+2. Paste API key vào ô "Admin API Key":
+   → OCR_ADMIN_MUJpeW9fPbSNuX22esEVOp1Klm0JlOjvMO_lS-OdfUE
+
+3. Điền thông tin:
+   → Loại Gói: Lifetime (Trọn đời)
+   → Số Lượng: 1
+   → Email: hoangtuan.th484@gmail.com
+
+4. Click "🎁 Tạo License"
+
+5. → License mới xuất hiện trong danh sách!
+
+
+📝 LƯU KEY VÀO ĐÂU?
+═══════════════════════════════════════════════════════════════
+
+✅ NÊN lưu vào:
+  • Password manager (1Password, Bitwarden)
+  • File text bảo mật trên máy local
+  • Encrypted note (OneNote với password)
+
+❌ KHÔNG lưu vào:
+  • Email
+  • Chat không mã hóa
+  • GitHub public repository
+  • Google Docs công khai
+
+
+🐛 NẾU GẶP LỖI:
+═══════════════════════════════════════════════════════════════
+
+Lỗi: "Vui lòng nhập Admin API Key để xem danh sách"
+→ Paste đúng key (không có khoảng trắng thừa)
+
+Lỗi: "Invalid API Key"
+→ Kiểm tra Render Environment Variables
+→ Đảm bảo đã Save Changes và redeploy xong
+
+Trang admin không load
+→ Vào https://ocr-uufr.onrender.com/health trước
+→ Đợi 10-15 giây rồi vào lại /admin
+
+
+═══════════════════════════════════════════════════════════════
+Xem chi tiết: ADMIN_API_KEY_SETUP.md
+═══════════════════════════════════════════════════════════════
+

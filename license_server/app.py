@@ -38,10 +38,10 @@ CORS(app)
 
 # Cấu hình
 DATABASE = 'licenses.db'
-ADMIN_API_KEY = 'your-secure-admin-api-key-here-change-this'  # ⚠️ ĐỔI KEY NÀY!
 
 # PayOS Configuration (from environment variables)
 import os
+ADMIN_API_KEY = os.getenv('ADMIN_API_KEY', 'your-secure-admin-api-key-here-change-this')  # ⚠️ Đặt trong Render Environment Variables!
 PAYOS_CLIENT_ID = os.getenv('PAYOS_CLIENT_ID', '')
 PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
 PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
