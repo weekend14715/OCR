@@ -273,54 +273,26 @@
             <p>Công cụ nhận dạng chữ tiếng Việt tốt nhất - Nhanh, Chính xác, Tiện lợi</p>
         </header>
 
-        <div class="pricing-section">
-            <!-- Monthly Plan -->
-            <div class="pricing-card">
-                <div class="plan-name">Gói Tháng</div>
-                <div class="plan-price">99,000₫</div>
-                <div class="plan-duration">/ tháng</div>
-                <ul class="features">
-                    <li>Sử dụng đầy đủ tính năng</li>
-                    <li>OCR tiếng Việt chính xác cao</li>
-                    <li>Chọn vùng màn hình linh hoạt</li>
-                    <li>Tự động copy vào clipboard</li>
-                    <li>Hỗ trợ phím tắt tùy chỉnh</li>
-                    <li>Cập nhật miễn phí trong tháng</li>
-                </ul>
-                <button class="buy-button" onclick="showPurchaseModal('monthly', '99,000₫')">Mua Ngay</button>
-            </div>
-
-            <!-- Yearly Plan -->
-            <div class="pricing-card popular">
-                <div class="popular-badge">⭐ PHỔ BIẾN NHẤT</div>
-                <div class="plan-name">Gói Năm</div>
-                <div class="plan-price">799,000₫</div>
-                <div class="plan-duration">/ năm (Tiết kiệm 33%)</div>
-                <ul class="features">
-                    <li>Tất cả tính năng gói tháng</li>
-                    <li>Tiết kiệm 389,000₫/năm</li>
-                    <li>Ưu tiên hỗ trợ kỹ thuật</li>
-                    <li>Cập nhật miễn phí 1 năm</li>
-                    <li>Nhận thông báo tính năng mới</li>
-                    <li>Hóa đơn VAT (nếu cần)</li>
-                </ul>
-                <button class="buy-button" onclick="showPurchaseModal('yearly', '799,000₫')">Mua Ngay - Tiết Kiệm 33%</button>
-            </div>
-
-            <!-- Lifetime Plan -->
-            <div class="pricing-card">
-                <div class="plan-name">Trọn Đời</div>
-                <div class="plan-price">1,999,000₫</div>
+        <div class="pricing-section" style="display: flex; justify-content: center;">
+            <!-- Lifetime Plan ONLY -->
+            <div class="pricing-card popular" style="max-width: 450px;">
+                <div class="popular-badge">⭐ GIÁ ƯU ĐÃI ĐẶC BIỆT</div>
+                <div class="plan-name">Kích Hoạt Trọn Đời</div>
+                <div class="plan-price">100,000₫</div>
                 <div class="plan-duration">Một lần - Sử dụng mãi mãi</div>
                 <ul class="features">
-                    <li>Tất cả tính năng gói năm</li>
-                    <li>Sử dụng trọn đời không giới hạn</li>
-                    <li>Cập nhật miễn phí mãi mãi</li>
-                    <li>Hỗ trợ ưu tiên VIP</li>
-                    <li>Tặng license cho 1 máy phụ</li>
-                    <li>Truy cập sớm tính năng mới</li>
+                    <li>✅ Sử dụng trọn đời không giới hạn</li>
+                    <li>✅ OCR tiếng Việt chính xác cao (98%)</li>
+                    <li>✅ Chọn vùng màn hình linh hoạt</li>
+                    <li>✅ Tự động copy vào clipboard</li>
+                    <li>✅ Hỗ trợ phím tắt tùy chỉnh</li>
+                    <li>✅ Cập nhật miễn phí mãi mãi</li>
+                    <li>✅ Hỗ trợ kỹ thuật 24/7</li>
+                    <li>✅ Kích hoạt tự động sau khi thanh toán</li>
                 </ul>
-                <button class="buy-button" onclick="showPurchaseModal('lifetime', '1,999,000₫')">Mua Ngay - Sở Hữu Vĩnh Viễn</button>
+                <button class="buy-button" onclick="showPurchaseModal('lifetime', '100,000₫')">
+                    🚀 Mua Ngay - Chỉ 100,000₫
+                </button>
             </div>
         </div>
 
@@ -366,37 +338,62 @@
 
     <!-- Purchase Modal -->
     <div id="purchaseModal" class="modal">
-        <div class="modal-content">
-            <h2>🎉 Chọn phương thức thanh toán</h2>
-            <p id="modalText"></p>
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 style="color: #667eea; margin-bottom: 20px;">🏦 Hướng Dẫn Thanh Toán</h2>
+            <p id="modalText" style="font-size: 1.1em; color: #333; margin-bottom: 20px;"></p>
             
-            <div class="payment-input">
+            <!-- Email Input -->
+            <div class="payment-input" style="margin-bottom: 25px;">
+                <label style="display: block; text-align: left; margin-bottom: 8px; color: #555; font-weight: bold;">
+                    📧 Email nhận License Key:
+                </label>
                 <input type="email" id="customerEmail" placeholder="Nhập email của bạn" required
-                       style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 20px;">
+                       style="width: 100%; padding: 14px; border: 2px solid #667eea; border-radius: 10px; font-size: 16px;">
             </div>
             
-            <div class="payment-methods" style="display: grid; gap: 15px; margin: 20px 0;">
-                <button onclick="processPayment('vnpay')" style="background: #ee0033; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                    💳 VNPay
-                </button>
-                <button onclick="processPayment('momo')" style="background: #a50064; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                    🎀 MoMo
-                </button>
-                <button onclick="processPayment('zalopay')" style="background: #0068ff; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                    ⚡ ZaloPay
-                </button>
+            <!-- Bank Transfer Info -->
+            <div id="bankInfo" style="display: none; background: #f8f9ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #667eea;">
+                <h3 style="color: #667eea; margin-bottom: 15px; text-align: center;">💳 Thông Tin Chuyển Khoản</h3>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: grid; gap: 10px; text-align: left;">
+                        <div><strong>🏦 Ngân hàng:</strong> <span id="bankName">Đang tải...</span></div>
+                        <div><strong>📱 Số tài khoản:</strong> <span id="accountNumber" style="font-size: 1.2em; color: #667eea; font-weight: bold;">Đang tải...</span></div>
+                        <div><strong>👤 Chủ tài khoản:</strong> <span id="accountName">Đang tải...</span></div>
+                        <div><strong>💰 Số tiền:</strong> <span style="font-size: 1.3em; color: #e74c3c; font-weight: bold;">100,000₫</span></div>
+                        <div><strong>✉️ Nội dung CK:</strong> <span id="transferContent" style="font-size: 1.1em; color: #667eea; font-weight: bold;">EMAIL</span></div>
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; color: #856404; font-size: 0.95em;">
+                        ⚠️ <strong>LƯU Ý:</strong> Vui lòng ghi <strong>CHÍNH XÁC email của bạn</strong> vào nội dung chuyển khoản để hệ thống tự động gửi License Key!
+                    </p>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <p style="margin: 0; color: #155724; font-size: 0.95em;">
+                        ✅ <strong>Sau khi chuyển khoản:</strong> License Key sẽ được gửi tự động về email trong vòng <strong>1-2 phút</strong>!
+                    </p>
+                </div>
             </div>
             
-            <p style="font-size: 0.9em; color: #999; margin-top: 20px;">
-                💡 Sau khi thanh toán, license key sẽ hiển thị ngay lập tức!
-            </p>
+            <!-- Create Order Button -->
+            <button id="createOrderBtn" class="buy-button" onclick="createOrder()" style="margin-bottom: 15px;">
+                🚀 Tạo Đơn Hàng & Xem Thông Tin CK
+            </button>
             
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                <p style="font-size: 0.9em; color: #666;"><strong>Hoặc liên hệ trực tiếp:</strong></p>
-                <p style="font-size: 0.9em;">📧 <a href="mailto:sales@ocrvietnamese.com">sales@ocrvietnamese.com</a> | 📱 0123 456 789</p>
+            <!-- Copy Email Button (hidden by default) -->
+            <button id="copyEmailBtn" style="display: none; background: #28a745; color: white; padding: 12px; border: none; border-radius: 10px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px;" onclick="copyEmail()">
+                📋 Copy Email để điền vào nội dung CK
+            </button>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <p style="font-size: 0.9em; color: #666;"><strong>Cần hỗ trợ?</strong></p>
+                <p style="font-size: 0.9em;">📧 <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a> | 📱 0123 456 789</p>
             </div>
             
-            <button class="close-button" onclick="closeModal()" style="margin-top: 20px; background: #95a5a6;">Đóng</button>
+            <button class="close-button" onclick="closeModal()" style="margin-top: 15px; background: #95a5a6;">Đóng</button>
         </div>
     </div>
 
@@ -406,85 +403,108 @@
     </footer>
 
     <script>
-        let selectedPlan = '';
-        let selectedPrice = '';
+        let currentOrderId = null;
+        let userEmail = '';
 
         function showPurchaseModal(plan, price) {
             const modal = document.getElementById('purchaseModal');
             const modalText = document.getElementById('modalText');
             
-            selectedPlan = plan;
-            selectedPrice = price;
-            
-            let planName = '';
-            switch(plan) {
-                case 'monthly':
-                    planName = 'Gói Tháng';
-                    break;
-                case 'yearly':
-                    planName = 'Gói Năm';
-                    break;
-                case 'lifetime':
-                    planName = 'Gói Trọn Đời';
-                    break;
-            }
-            
-            modalText.innerHTML = `Bạn đã chọn: <strong>${planName}</strong><br>Giá: <strong>${price}</strong>`;
+            modalText.innerHTML = `<strong>Gói Kích Hoạt Trọn Đời</strong><br>Giá: <strong style="color: #e74c3c; font-size: 1.3em;">100,000₫</strong>`;
             modal.style.display = 'flex';
+            
+            // Reset state
+            document.getElementById('bankInfo').style.display = 'none';
+            document.getElementById('createOrderBtn').style.display = 'block';
+            document.getElementById('copyEmailBtn').style.display = 'none';
+            document.getElementById('customerEmail').value = '';
+            currentOrderId = null;
         }
 
-        async function processPayment(paymentMethod) {
-            const email = document.getElementById('customerEmail').value;
+        async function createOrder() {
+            const email = document.getElementById('customerEmail').value.trim();
             
             if (!email) {
-                alert('Vui lòng nhập email!');
+                alert('⚠️ Vui lòng nhập email!');
                 return;
             }
             
-            if (!email.includes('@')) {
-                alert('Email không hợp lệ!');
+            if (!email.includes('@') || !email.includes('.')) {
+                alert('⚠️ Email không hợp lệ!');
                 return;
             }
+            
+            userEmail = email;
             
             // Show loading
-            const buttons = document.querySelectorAll('.payment-methods button');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                btn.style.opacity = '0.6';
-            });
+            const btn = document.getElementById('createOrderBtn');
+            btn.disabled = true;
+            btn.innerText = '⏳ Đang tạo đơn hàng...';
             
             try {
-                const response = await fetch('/api/payment/create', {
+                const response = await fetch('/api/payment/create-order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        plan_type: selectedPlan,
-                        payment_method: paymentMethod,
-                        customer_email: email
+                        customer_email: email,
+                        plan_type: 'lifetime',
+                        amount: 100000
                     })
                 });
                 
                 const data = await response.json();
                 
-                if (data.success && data.payment_url) {
-                    // Redirect to payment gateway
-                    window.location.href = data.payment_url;
+                if (data.success) {
+                    currentOrderId = data.order_id;
+                    
+                    // Show bank info
+                    document.getElementById('bankInfo').style.display = 'block';
+                    document.getElementById('bankName').innerText = data.bank_info.bank_name || 'MB Bank';
+                    document.getElementById('accountNumber').innerText = data.bank_info.account_number || 'Đang cập nhật';
+                    document.getElementById('accountName').innerText = data.bank_info.account_name || 'Đang cập nhật';
+                    document.getElementById('transferContent').innerText = email;
+                    
+                    // Hide create button, show copy button
+                    btn.style.display = 'none';
+                    document.getElementById('copyEmailBtn').style.display = 'block';
+                    
+                    alert('✅ Đơn hàng đã được tạo!\n\n🏦 Vui lòng chuyển khoản theo thông tin bên dưới.\n\n⚠️ LƯU Ý: Ghi email của bạn vào nội dung chuyển khoản!');
                 } else {
-                    alert('Lỗi: ' + (data.error || 'Không thể tạo thanh toán'));
-                    buttons.forEach(btn => {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                    });
+                    alert('❌ Lỗi: ' + (data.error || 'Không thể tạo đơn hàng'));
+                    btn.disabled = false;
+                    btn.innerText = '🚀 Tạo Đơn Hàng & Xem Thông Tin CK';
                 }
             } catch (error) {
-                alert('Lỗi kết nối: ' + error.message);
-                buttons.forEach(btn => {
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                });
+                alert('❌ Lỗi kết nối: ' + error.message);
+                btn.disabled = false;
+                btn.innerText = '🚀 Tạo Đơn Hàng & Xem Thông Tin CK';
             }
+        }
+
+        function copyEmail() {
+            if (!userEmail) {
+                alert('⚠️ Không có email để copy!');
+                return;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(userEmail).then(() => {
+                const btn = document.getElementById('copyEmailBtn');
+                const originalText = btn.innerText;
+                btn.innerText = '✅ Đã copy email!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = '#28a745';
+                }, 2000);
+                
+                alert('✅ Đã copy email: ' + userEmail + '\n\nHãy dán vào nội dung chuyển khoản!');
+            }).catch(err => {
+                alert('❌ Không thể copy: ' + err);
+            });
         }
 
         function closeModal() {

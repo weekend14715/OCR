@@ -16,6 +16,14 @@ from payment_gateway import (
     VNPayPayment, MoMoPayment, ZaloPayPayment,
     generate_order_id, get_plan_info
 )
+# Import Casso payment
+try:
+    from casso_payment import CassoPayment
+    CASSO_ENABLED = True
+except ImportError:
+    CASSO_ENABLED = False
+    print("⚠️  Warning: Casso payment not available.")
+
 # Import email sender
 try:
     from email_sender import send_license_email
@@ -30,6 +38,12 @@ CORS(app)
 # Cấu hình
 DATABASE = 'licenses.db'
 ADMIN_API_KEY = 'your-secure-admin-api-key-here-change-this'  # ⚠️ ĐỔI KEY NÀY!
+
+# Casso Configuration (from environment variables)
+import os
+CASSO_API_KEY = os.getenv('CASSO_API_KEY', 'dd9f4ba8-cc6b-46e8-9afb-930972bf7531')
+CASSO_BUSINESS_ID = os.getenv('CASSO_BUSINESS_ID', '4bbbd884-88f2-410c-9dc8-6782980ef64f')
+CASSO_CHECKSUM_KEY = os.getenv('CASSO_CHECKSUM_KEY', 'a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d')
 
 # ==============================================================================
 # DATABASE SETUP
@@ -792,6 +806,217 @@ def get_order_status(order_id):
             'created_at': row[5],
             'paid_at': row[6]
         }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==============================================================================
+# CASSO PAYMENT INTEGRATION
+# ==============================================================================
+
+@app.route('/api/payment/create-order', methods=['POST'])
+def create_payment_order():
+    """
+    Tạo đơn hàng mới và lấy thông tin chuyển khoản
+    POST: {
+        "customer_email": "email@example.com",
+        "plan_type": "lifetime",
+        "amount": 100000
+    }
+    """
+    try:
+        data = request.get_json()
+        customer_email = data.get('customer_email', '').strip()
+        plan_type = data.get('plan_type', 'lifetime')
+        amount = int(data.get('amount', 100000))
+        
+        if not customer_email or '@' not in customer_email:
+            return jsonify({'error': 'Invalid email'}), 400
+        
+        # Tạo order ID
+        order_id = generate_order_id()
+        created_at = datetime.datetime.now().isoformat()
+        
+        # Lưu order vào database
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            INSERT INTO orders 
+            (order_id, plan_type, amount, customer_email, payment_method, payment_status, created_at)
+            VALUES (?, ?, ?, ?, 'bank_transfer', 'pending', ?)
+        ''', (order_id, plan_type, amount, customer_email, created_at))
+        
+        conn.commit()
+        conn.close()
+        
+        # Lấy thông tin bank từ Casso (nếu có)
+        bank_info = {
+            'bank_name': 'Ngân hàng (đang cập nhật)',
+            'account_number': 'Đang cập nhật',
+            'account_name': 'Đang cập nhật'
+        }
+        
+        if CASSO_ENABLED:
+            try:
+                casso = CassoPayment(CASSO_API_KEY, CASSO_BUSINESS_ID, CASSO_CHECKSUM_KEY)
+                bank_data = casso.get_bank_info()
+                
+                if bank_data and 'data' in bank_data:
+                    # Parse bank info từ Casso response
+                    # Structure có thể khác nhau, cần xem response thật
+                    bank_info = {
+                        'bank_name': bank_data.get('data', {}).get('bankName', 'MB Bank'),
+                        'account_number': bank_data.get('data', {}).get('bankAccount', '0123456789'),
+                        'account_name': bank_data.get('data', {}).get('bankAccountName', 'NGUYEN VAN A')
+                    }
+            except Exception as e:
+                print(f"⚠️ Casso bank info error: {e}")
+        
+        return jsonify({
+            'success': True,
+            'order_id': order_id,
+            'bank_info': bank_info,
+            'amount': amount,
+            'transfer_content': customer_email
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/webhook/casso', methods=['POST'])
+def casso_webhook():
+    """
+    Webhook nhận thông báo từ Casso khi có giao dịch mới
+    
+    Casso sẽ gửi POST request với data:
+    {
+        "id": transaction_id,
+        "amount": 100000,
+        "description": "email@example.com",
+        "when": "2025-10-22 11:30:00",
+        ...
+    }
+    """
+    try:
+        # Lấy data từ webhook
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data'}), 400
+        
+        print(f"📩 Received Casso webhook: {data}")
+        
+        # Parse transaction info
+        transaction_id = data.get('id')
+        amount = int(data.get('amount', 0))
+        description = data.get('description', '').strip()
+        when = data.get('when')
+        
+        # Tìm email trong description
+        customer_email = None
+        if description:
+            # Parse email từ description
+            import re
+            email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+            match = re.search(email_pattern, description)
+            if match:
+                customer_email = match.group(0).lower()
+        
+        if not customer_email:
+            print(f"⚠️ No email found in description: {description}")
+            return jsonify({'error': 'No email in description'}), 400
+        
+        # Kiểm tra amount
+        if amount != 100000:
+            print(f"⚠️ Invalid amount: {amount}, expected: 100000")
+            return jsonify({'error': 'Invalid amount'}), 400
+        
+        # Tìm order với email này
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT order_id, payment_status 
+            FROM orders 
+            WHERE customer_email = ? AND payment_status = 'pending'
+            ORDER BY created_at DESC
+            LIMIT 1
+        ''', (customer_email,))
+        
+        order = c.fetchone()
+        
+        if not order:
+            # Tạo order mới nếu chưa có
+            order_id = generate_order_id()
+            created_at = datetime.datetime.now().isoformat()
+            
+            c.execute('''
+                INSERT INTO orders 
+                (order_id, plan_type, amount, customer_email, payment_method, payment_status, created_at, transaction_id)
+                VALUES (?, 'lifetime', ?, ?, 'bank_transfer', 'pending', ?, ?)
+            ''', (order_id, amount, customer_email, created_at, str(transaction_id)))
+            
+            conn.commit()
+        else:
+            order_id = order[0]
+        
+        conn.close()
+        
+        # Tự động tạo license key
+        license_key = auto_generate_license(order_id, 'lifetime', customer_email, str(transaction_id))
+        
+        if license_key:
+            print(f"✅ Successfully processed Casso payment: {transaction_id}")
+            print(f"   Email: {customer_email}")
+            print(f"   License: {license_key}")
+            
+            return jsonify({
+                'success': True,
+                'order_id': order_id,
+                'license_key': license_key
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to generate license'}), 500
+        
+    except Exception as e:
+        print(f"❌ Casso webhook error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/casso/test-webhook', methods=['POST'])
+@require_admin_key
+def test_casso_webhook():
+    """
+    Test endpoint để test Casso webhook manually
+    POST: {
+        "email": "test@example.com",
+        "amount": 100000,
+        "transaction_id": "TEST123"
+    }
+    """
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        amount = data.get('amount', 100000)
+        transaction_id = data.get('transaction_id', 'TEST' + str(int(datetime.datetime.now().timestamp())))
+        
+        # Simulate webhook data
+        webhook_data = {
+            'id': transaction_id,
+            'amount': amount,
+            'description': email,
+            'when': datetime.datetime.now().isoformat()
+        }
+        
+        # Call webhook handler
+        with app.test_client() as client:
+            response = client.post('/api/webhook/casso', 
+                                 json=webhook_data,
+                                 content_type='application/json')
+            
+            return response.get_json(), response.status_code
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
