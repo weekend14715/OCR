@@ -352,6 +352,14 @@ def admin_generate_license():
         created_keys = []
         created_at = datetime.datetime.now().isoformat()
         
+        # Tính expiry date cho preview
+        if plan_type == 'lifetime':
+            expiry_date = None
+        elif plan_type == 'yearly':
+            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+        elif plan_type == 'monthly':
+            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+        
         for _ in range(quantity):
             license_key = generate_license_key()
             
@@ -366,12 +374,49 @@ def admin_generate_license():
         conn.commit()
         conn.close()
         
-        return jsonify({
+        # 🔥 GỬI EMAIL CHO KHÁCH HÀNG (nếu có email)
+        email_sent = False
+        email_result = None
+        
+        if EMAIL_ENABLED and email:
+            try:
+                # Gửi email cho mỗi license key đã tạo
+                for license_key in created_keys:
+                    result = send_license_email(
+                        to_email=email,
+                        license_key=license_key,
+                        customer_name=email.split('@')[0],  # Lấy tên từ email
+                        order_id='ADMIN-' + datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
+                        plan_type=plan_type
+                    )
+                    
+                    if result['success']:
+                        email_sent = True
+                        email_result = f"Sent via {result['account_used']}"
+                        print(f"✅ Email sent to {email} via {result['account_used']}")
+                        print(f"   License: {license_key}")
+                    else:
+                        print(f"❌ Failed to send email: {result['message']}")
+                        email_result = f"Failed: {result['message']}"
+            except Exception as e:
+                print(f"❌ Email error: {e}")
+                email_result = f"Error: {str(e)}"
+        
+        response = {
             'success': True,
             'licenses': created_keys,
             'plan': plan_type,
             'quantity': quantity
-        }), 201
+        }
+        
+        # Thêm thông tin email vào response
+        if email:
+            response['email'] = email
+            response['email_sent'] = email_sent
+            if email_result:
+                response['email_result'] = email_result
+        
+        return jsonify(response), 201
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

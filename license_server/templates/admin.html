@@ -372,6 +372,23 @@
                         html += `<div class="license-key" onclick="copyToClipboard('${key}')">${key}</div>`;
                     });
                     html += '<br><small>Click vào key để copy</small>';
+                    
+                    // Hiển thị thông báo email
+                    if (data.email) {
+                        html += '<br><br>';
+                        if (data.email_sent) {
+                            html += `<strong style="color: #28a745;">📧 Email đã được gửi đến: ${data.email}</strong><br>`;
+                            if (data.email_result) {
+                                html += `<small>${data.email_result}</small>`;
+                            }
+                        } else {
+                            html += `<strong style="color: #ffc107;">⚠️ Email không được gửi</strong><br>`;
+                            if (data.email_result) {
+                                html += `<small>${data.email_result}</small>`;
+                            }
+                        }
+                    }
+                    
                     showResult(resultBox, 'success', html);
                     loadStats();
                     loadLicenses();
