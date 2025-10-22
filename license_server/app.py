@@ -1226,7 +1226,7 @@ def create_payos_payment():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/webhook/payos', methods=['POST', 'GET'])
+@app.route('/api/webhook/payos', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
 def payos_webhook():
     """
     Webhook nhận thông báo từ PayOS khi thanh toán thành công
@@ -1247,9 +1247,13 @@ def payos_webhook():
         "signature": "..."
     }
     """
-    # PayOS test webhook bằng GET request
-    if request.method == 'GET':
-        return jsonify({'status': 'webhook_ready', 'service': 'payos'}), 200
+    # PayOS test webhook bằng GET/HEAD/OPTIONS request
+    if request.method in ['GET', 'HEAD', 'OPTIONS']:
+        response = jsonify({'status': 'webhook_ready', 'service': 'payos', 'version': '1.0'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-signature'
+        return response, 200
     
     try:
         # Lấy data từ webhook
