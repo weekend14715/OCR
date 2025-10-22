@@ -250,13 +250,19 @@ def send_license_email(to_email, license_key, customer_name, order_id="", plan_t
         
         msg.attach(MIMEText(html, 'html'))
         
-        # Gửi email qua SMTP
-        with smtplib.SMTP(smtp_config['server'], smtp_config['port']) as server:
+        # Gửi email qua SMTP với timeout
+        with smtplib.SMTP(smtp_config['server'], smtp_config['port'], timeout=30) as server:
+            server.set_debuglevel(0)  # Tắt debug để production
+            
             if smtp_config.get('use_tls', True):
                 server.starttls()
             
             # Use 'app_password' field from environment variable or 'password' from config file
             password = account.get('app_password') or account.get('password')
+            
+            if not password:
+                raise Exception("No password found for email account")
+            
             server.login(account['email'], password)
             server.send_message(msg)
         

@@ -832,6 +832,90 @@ def zalopay_callback():
         return jsonify({'return_code': 0, 'return_message': str(e)})
 
 
+def auto_generate_license(order_id, plan_type, customer_email, transaction_ref):
+    """
+    Tự động tạo license key (dùng cho PayOS webhook)
+    Returns: license_key or None
+    """
+    try:
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        # Check if license already generated for this order
+        c.execute('SELECT license_key FROM orders WHERE order_id = ? AND license_key IS NOT NULL', (str(order_id),))
+        existing = c.fetchone()
+        
+        if existing:
+            print(f"⚠️ License already exists for order {order_id}")
+            conn.close()
+            return existing[0]
+        
+        # Generate new license
+        license_key = generate_license_key()
+        created_at = datetime.datetime.now().isoformat()
+        
+        # Calculate expiry date
+        if plan_type == 'lifetime':
+            expiry_date = None
+        elif plan_type == 'yearly':
+            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+        elif plan_type == 'monthly':
+            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+        else:
+            expiry_date = None
+        
+        # Insert license
+        c.execute('''
+            INSERT INTO licenses 
+            (license_key, email, plan_type, created_at, is_active, order_id)
+            VALUES (?, ?, ?, ?, 1, ?)
+        ''', (license_key, customer_email, plan_type, created_at, str(order_id)))
+        
+        # Update order status
+        c.execute('''
+            UPDATE orders 
+            SET payment_status = 'completed',
+                transaction_id = ?,
+                license_key = ?,
+                paid_at = ?,
+                expires_at = ?
+            WHERE order_id = ?
+        ''', (transaction_ref, license_key, created_at, expiry_date, str(order_id)))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Auto-generated license: {license_key}")
+        print(f"   Order ID: {order_id}")
+        print(f"   Email: {customer_email}")
+        
+        # 🔥 GỬI EMAIL CHO KHÁCH HÀNG
+        if EMAIL_ENABLED and customer_email:
+            try:
+                result = send_license_email(
+                    to_email=customer_email,
+                    license_key=license_key,
+                    customer_name=customer_email.split('@')[0],
+                    order_id=str(order_id),
+                    plan_type=plan_type
+                )
+                
+                if result['success']:
+                    print(f"✅ Email sent to {customer_email} via {result['account_used']}")
+                else:
+                    print(f"❌ Failed to send email: {result['message']}")
+            except Exception as e:
+                print(f"❌ Email error: {e}")
+        
+        return license_key
+        
+    except Exception as e:
+        print(f"❌ Error generating license: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def auto_generate_license_for_order(order_id, payment_method, transaction_id):
     """
     Tự động tạo license key sau khi thanh toán thành công
