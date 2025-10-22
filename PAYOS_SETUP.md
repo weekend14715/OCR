@@ -18,13 +18,22 @@ Checksum Key: a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d
 
 Vào **Render Dashboard** → **license-server** → **Environment**
 
-Thêm 3 biến:
+Thêm **7 biến** (3 PayOS + 4 Bank Info):
 
 ```bash
+# PayOS Credentials
 PAYOS_CLIENT_ID=4bbbd884-88f2-410c-9dc8-6782980ef64f
 PAYOS_API_KEY=dd9f4ba8-cc6b-46e8-9afb-930972bf7531
 PAYOS_CHECKSUM_KEY=a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d
+
+# Bank Account Info (THAY ĐỔI THÀNH THÔNG TIN NGÂN HÀNG CỦA BẠN)
+BANK_CODE=MB
+BANK_NAME=MB Bank (Ngân hàng Quân Đội)
+BANK_ACCOUNT_NUMBER=0123456789
+BANK_ACCOUNT_NAME=NGUYEN VAN A
 ```
+
+**⚠️ QUAN TRỌNG:** Thay đổi 4 biến `BANK_*` thành **thông tin ngân hàng THẬT của bạn**!
 
 **Xóa các biến cũ (nếu có):**
 - `CASSO_API_KEY`
@@ -219,6 +228,28 @@ return_url=f"https://your-app.com/payment/success?order_id={order_id}"
 
 ---
 
+## 🏦 DANH SÁCH MÃ NGÂN HÀNG (BANK_CODE)
+
+| Ngân hàng | Mã code |
+|-----------|---------|
+| MB Bank (Quân Đội) | `MB` |
+| Vietcombank | `VCB` |
+| Techcombank | `TCB` |
+| VietinBank | `CTG` |
+| BIDV | `BIDV` |
+| Agribank | `AGR` |
+| ACB | `ACB` |
+| Sacombank | `STB` |
+| VPBank | `VPB` |
+| TPBank | `TPB` |
+| HDBank | `HDB` |
+| Vietbank | `VIETBANK` |
+| MBBank | `MB` |
+
+**VD:** Nếu bạn dùng Vietcombank → `BANK_CODE=VCB`
+
+---
+
 ## 🎉 KẾT QUẢ
 
 Sau khi deploy:
@@ -228,6 +259,7 @@ Sau khi deploy:
 ✅ Webhook tự động tạo license
 ✅ Email thông báo license key
 ✅ Admin có thể track tất cả orders
+✅ Hiển thị đúng thông tin bank của bạn
 
 **DONE! Hệ thống thanh toán tự động hoàn chỉnh!** 🚀
 

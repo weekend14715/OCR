@@ -455,14 +455,15 @@ class VietQRPayment:
     @staticmethod
     def get_bank_info():
         """
-        Lấy thông tin ngân hàng để hiển thị
-        Thay đổi thông tin này theo tài khoản thật của bạn
+        Lấy thông tin ngân hàng từ environment variables
+        Fallback về giá trị mặc định nếu không có
         """
+        import os
         return {
-            'bank_code': 'MB',  # MB Bank
-            'bank_name': 'MB Bank (Ngân hàng Quân Đội)',
-            'account_number': '0123456789',  # THAY ĐỔI
-            'account_name': 'NGUYEN VAN A',  # THAY ĐỔI
+            'bank_code': os.getenv('BANK_CODE', 'MB'),
+            'bank_name': os.getenv('BANK_NAME', 'MB Bank (Ngân hàng Quân Đội)'),
+            'account_number': os.getenv('BANK_ACCOUNT_NUMBER', '0123456789'),
+            'account_name': os.getenv('BANK_ACCOUNT_NAME', 'NGUYEN VAN A'),
         }
 
 
