@@ -495,6 +495,72 @@ def admin_deactivate_license():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ==============================================================================
+# DEBUG ENDPOINT - EMAIL CONFIG
+# ==============================================================================
+
+@app.route('/api/debug/email-config', methods=['GET'])
+def debug_email_config():
+    """
+    🔍 Debug endpoint - Kiểm tra email configuration
+    Endpoint công khai để debug (KHÔNG yêu cầu auth)
+    
+    Truy cập: https://ocr-uufr.onrender.com/api/debug/email-config
+    """
+    import os
+    import json
+    
+    result = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'env_var_exists': False,
+        'env_var_length': 0,
+        'parse_success': False,
+        'accounts_count': 0,
+        'accounts': [],
+        'error': None,
+        'status': 'UNKNOWN'
+    }
+    
+    # Kiểm tra biến môi trường
+    email_accounts_env = os.getenv('EMAIL_ACCOUNTS')
+    
+    if not email_accounts_env:
+        result['error'] = 'EMAIL_ACCOUNTS environment variable not found'
+        result['status'] = 'ERROR - Env var missing'
+        result['fix'] = 'Add EMAIL_ACCOUNTS to Render Environment Variables'
+        return jsonify(result), 200
+    
+    result['env_var_exists'] = True
+    result['env_var_length'] = len(email_accounts_env)
+    result['first_50_chars'] = email_accounts_env[:50] + '...'
+    
+    # Thử parse JSON
+    try:
+        accounts = json.loads(email_accounts_env)
+        result['parse_success'] = True
+        result['accounts_count'] = len(accounts)
+        
+        # Hiển thị thông tin accounts (che password)
+        for acc in accounts:
+            result['accounts'].append({
+                'email': acc.get('email', 'MISSING'),
+                'has_password': bool(acc.get('password')),
+                'password_length': len(acc.get('password', '')),
+                'daily_limit': acc.get('daily_limit', 'MISSING')
+            })
+        
+        result['status'] = 'OK - Email config will work!'
+        result['message'] = f'✅ Found {len(accounts)} email account(s)'
+        
+    except json.JSONDecodeError as e:
+        result['error'] = f'JSON Parse Error: {str(e)}'
+        result['status'] = 'ERROR - Invalid JSON format'
+        result['fix'] = 'Check EMAIL_ACCOUNTS format: must use double quotes " not single quotes \''
+    
+    return jsonify(result), 200
+
+
 @app.route('/api/admin/stats', methods=['GET'])
 @require_admin_key
 def admin_stats():
