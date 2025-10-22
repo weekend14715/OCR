@@ -32,6 +32,7 @@ def init_payos():
             checksum_key=PAYOS_CHECKSUM_KEY
         )
         print("✅ PayOS đã được kích hoạt!")
+        print(f"   Available methods: {[m for m in dir(payos_client) if not m.startswith('_')]}")
         return True
     except Exception as e:
         print(f"❌ Lỗi khởi tạo PayOS: {e}")
@@ -78,7 +79,16 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         }
         
         # Tạo payment link
-        response = payos_client.createPaymentLink(payment_data)
+        # Try different method names based on SDK version
+        response = None
+        for method_name in ['createPaymentLink', 'create_payment_link', 'create_link', 'createLink']:
+            if hasattr(payos_client, method_name):
+                print(f"   Using PayOS method: {method_name}")
+                response = getattr(payos_client, method_name)(payment_data)
+                break
+        
+        if not response:
+            raise AttributeError(f"PayOS has no payment link creation method. Available: {[m for m in dir(payos_client) if not m.startswith('_')]}")
         
         if response:
             return {
