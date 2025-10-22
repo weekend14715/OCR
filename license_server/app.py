@@ -1231,21 +1231,30 @@ def payos_webhook():
     """
     Webhook nhận thông báo từ PayOS khi thanh toán thành công
     
+    Docs: https://payos.vn/docs/tich-hop-webhook/
+    
     PayOS sẽ gửi POST request với data:
     {
         "code": "00",
         "desc": "success",
+        "success": true,
         "data": {
-            "orderCode": 123456789,
-            "amount": 100000,
-            "description": "...",
-            "accountNumber": "...",
-            "reference": "...",
-            "transactionDateTime": "...",
+            "orderCode": 123,
+            "amount": 3000,
+            "description": "VQRIO123",
+            "accountNumber": "12345678",
+            "reference": "TF230204212323",
+            "transactionDateTime": "2023-02-04 18:25:00",
+            "currency": "VND",
+            "paymentLinkId": "124c33293c43417ab7879e14c8d9eb18",
+            "code": "00",
+            "desc": "Thành công",
             ...
         },
-        "signature": "..."
+        "signature": "8d8640d802576397a1ce45ebda7f835055768ac7ad2e0bfb77f9b8f12cca4c7f"
     }
+    
+    Server phải response status code 2XX để confirm webhook nhận thành công.
     """
     # PayOS test webhook bằng GET/HEAD/OPTIONS request
     if request.method in ['GET', 'HEAD', 'OPTIONS']:
@@ -1265,27 +1274,41 @@ def payos_webhook():
         
         print(f"📩 Received PayOS webhook: {data}")
         
-        # Lấy signature từ header hoặc data
-        signature = request.headers.get('x-signature') or data.get('signature')
+        # Lấy signature từ body (theo docs PayOS)
+        signature = data.get('signature')
         
         # TODO: Verify signature (TẠM THỜI TẮT ĐỂ TEST)
         # PayOS webhook signature verification sẽ được thêm sau
-        print(f"📝 Signature received: {signature}")
+        # https://payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature/
+        if signature:
+            print(f"📝 Signature received: {signature[:20]}...")
         
-        # Parse payment info
+        # Parse payment info (theo docs PayOS)
         payment_data = data.get('data', {})
         code = data.get('code')
+        success = data.get('success', False)
+        desc = data.get('desc', '')
         
-        # Kiểm tra thanh toán thành công
-        if code != '00':
-            print(f"⚠️ Payment not successful: {code}")
+        # Kiểm tra thanh toán thành công (theo docs: success=true hoặc code="00")
+        if not success and code != '00':
+            print(f"⚠️ Payment not successful: code={code}, desc={desc}")
             return jsonify({'error': 'Payment not successful'}), 400
         
         order_code = payment_data.get('orderCode')
         amount = int(payment_data.get('amount', 0))
         transaction_ref = payment_data.get('reference', '')
+        payment_link_id = payment_data.get('paymentLinkId', '')
+        transaction_datetime = payment_data.get('transactionDateTime', '')
+        
+        print(f"💳 Payment details:")
+        print(f"   Order Code: {order_code}")
+        print(f"   Amount: {amount:,} VND")
+        print(f"   Reference: {transaction_ref}")
+        print(f"   Payment Link: {payment_link_id}")
+        print(f"   Time: {transaction_datetime}")
         
         if not order_code:
+            print(f"❌ Missing order code in webhook data")
             return jsonify({'error': 'No order code'}), 400
         
         # Tìm order
