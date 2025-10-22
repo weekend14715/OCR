@@ -1226,7 +1226,7 @@ def create_payos_payment():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/webhook/payos', methods=['POST'])
+@app.route('/api/webhook/payos', methods=['POST', 'GET'])
 def payos_webhook():
     """
     Webhook nhận thông báo từ PayOS khi thanh toán thành công
@@ -1247,12 +1247,17 @@ def payos_webhook():
         "signature": "..."
     }
     """
+    # PayOS test webhook bằng GET request
+    if request.method == 'GET':
+        return jsonify({'status': 'webhook_ready', 'service': 'payos'}), 200
+    
     try:
         # Lấy data từ webhook
         data = request.get_json()
         
+        # PayOS có thể gửi empty request để test → return OK
         if not data:
-            return jsonify({'error': 'No data'}), 400
+            return jsonify({'status': 'ok', 'message': 'Webhook ready'}), 200
         
         print(f"📩 Received PayOS webhook: {data}")
         
