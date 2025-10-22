@@ -78,17 +78,9 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             "cancelUrl": cancel_url or f"https://your-app.com/payment/cancel"
         }
         
-        # Tạo payment link
-        # Try different method names based on SDK version
-        response = None
-        for method_name in ['createPaymentLink', 'create_payment_link', 'create_link', 'createLink']:
-            if hasattr(payos_client, method_name):
-                print(f"   Using PayOS method: {method_name}")
-                response = getattr(payos_client, method_name)(payment_data)
-                break
-        
-        if not response:
-            raise AttributeError(f"PayOS has no payment link creation method. Available: {[m for m in dir(payos_client) if not m.startswith('_')]}")
+        # Tạo payment link using REST API style
+        # PayOS SDK uses payment_requests.create()
+        response = payos_client.payment_requests.create(payment_data)
         
         if response:
             return {
