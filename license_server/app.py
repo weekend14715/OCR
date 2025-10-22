@@ -16,13 +16,14 @@ from payment_gateway import (
     VNPayPayment, MoMoPayment, ZaloPayPayment, VietQRPayment,
     generate_order_id, get_plan_info
 )
-# Import Casso payment
+# Import PayOS payment
 try:
-    from casso_payment import CassoPayment
-    CASSO_ENABLED = True
+    from payos_handler import PAYOS_ENABLED, create_payment_link, verify_webhook_signature, get_payment_info
+    if PAYOS_ENABLED:
+        print("✅ PayOS Payment đã được kích hoạt!")
 except ImportError:
-    CASSO_ENABLED = False
-    print("⚠️  Warning: Casso payment not available.")
+    PAYOS_ENABLED = False
+    print("⚠️  Warning: PayOS payment not available.")
 
 # Import email sender
 try:
@@ -39,22 +40,11 @@ CORS(app)
 DATABASE = 'licenses.db'
 ADMIN_API_KEY = 'your-secure-admin-api-key-here-change-this'  # ⚠️ ĐỔI KEY NÀY!
 
-# Casso Configuration (from environment variables)
+# PayOS Configuration (from environment variables)
 import os
-CASSO_API_KEY = os.getenv('CASSO_API_KEY', 'dd9f4ba8-cc6b-46e8-9afb-930972bf7531')
-CASSO_BUSINESS_ID = os.getenv('CASSO_BUSINESS_ID', '4bbbd884-88f2-410c-9dc8-6782980ef64f')
-CASSO_CHECKSUM_KEY = os.getenv('CASSO_CHECKSUM_KEY', 'a1e68d7351f461fa646a0fbd8f20563bcfb8080c44d50eb54df2f9ed9a0bfd7d')
-
-# Khởi tạo Casso Payment nếu có
-if CASSO_ENABLED:
-    casso = CassoPayment(
-        api_key=CASSO_API_KEY,
-        business_id=CASSO_BUSINESS_ID,
-        checksum_key=CASSO_CHECKSUM_KEY
-    )
-    print("✅ Casso Payment đã được kích hoạt!")
-else:
-    casso = None
+PAYOS_CLIENT_ID = os.getenv('PAYOS_CLIENT_ID', '')
+PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
+PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 # ==============================================================================
 # DATABASE SETUP
@@ -861,24 +851,8 @@ def create_payment_order():
         conn.commit()
         conn.close()
         
-        # Lấy thông tin bank
+        # Lấy thông tin bank (giữ cho legacy VietQR support)
         bank_info = VietQRPayment.get_bank_info()
-        
-        # Cập nhật bank info từ Casso nếu có
-        if CASSO_ENABLED:
-            try:
-                casso = CassoPayment(CASSO_API_KEY, CASSO_BUSINESS_ID, CASSO_CHECKSUM_KEY)
-                bank_data = casso.get_bank_info()
-                
-                if bank_data and 'data' in bank_data:
-                    bank_info = {
-                        'bank_code': bank_info.get('bank_code', 'MB'),
-                        'bank_name': bank_data.get('data', {}).get('bankName', bank_info['bank_name']),
-                        'account_number': bank_data.get('data', {}).get('bankAccount', bank_info['account_number']),
-                        'account_name': bank_data.get('data', {}).get('bankAccountName', bank_info['account_name'])
-                    }
-            except Exception as e:
-                print(f"⚠️ Casso bank info error: {e}")
         
         # Tạo VietQR URL
         vietqr_url = VietQRPayment.generate_vietqr_url(
@@ -902,18 +876,110 @@ def create_payment_order():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/webhook/casso', methods=['POST'])
-def casso_webhook():
+@app.route('/api/payment/create', methods=['POST'])
+def create_payment():
     """
-    Webhook nhận thông báo từ Casso khi có giao dịch mới
+    Tạo QR code thanh toán PayOS
     
-    Casso sẽ gửi POST request với data:
+    POST: {
+        "email": "customer@example.com",
+        "plan_type": "lifetime",  # hoặc "trial"
+        "amount": 100000
+    }
+    
+    Response: {
+        "success": true,
+        "order_id": "...",
+        "checkout_url": "https://...",
+        "qr_code": "https://..."
+    }
+    """
+    try:
+        if not PAYOS_ENABLED:
+            return jsonify({'error': 'PayOS not configured'}), 503
+        
+        data = request.get_json()
+        customer_email = data.get('email', '').strip().lower()
+        plan_type = data.get('plan_type', 'lifetime')
+        amount = int(data.get('amount', 100000))
+        
+        if not customer_email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Validate email
+        import re
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        if not re.match(email_pattern, customer_email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Tạo order
+        order_id = int(datetime.datetime.now().timestamp() * 1000)  # PayOS yêu cầu số nguyên
+        created_at = datetime.datetime.now().isoformat()
+        
+        # Lưu order vào DB
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            INSERT INTO orders 
+            (order_id, plan_type, amount, customer_email, payment_method, payment_status, created_at)
+            VALUES (?, ?, ?, ?, 'payos', 'pending', ?)
+        ''', (str(order_id), plan_type, amount, customer_email, created_at))
+        
+        conn.commit()
+        conn.close()
+        
+        # Tạo payment link với PayOS
+        description = f"OCR Tool {plan_type} - {customer_email}"
+        result = create_payment_link(
+            order_id=order_id,
+            amount=amount,
+            description=description,
+            customer_email=customer_email,
+            return_url=f"https://your-app.com/payment/success?order_id={order_id}",
+            cancel_url=f"https://your-app.com/payment/cancel?order_id={order_id}"
+        )
+        
+        if result.get('success'):
+            print(f"✅ Created PayOS payment link for {customer_email}")
+            print(f"   Order ID: {order_id}")
+            print(f"   Amount: {amount} VND")
+            
+            return jsonify({
+                'success': True,
+                'order_id': str(order_id),
+                'checkout_url': result['checkout_url'],
+                'qr_code': result['qr_code'],
+                'amount': amount,
+                'plan_type': plan_type
+            }), 200
+        else:
+            return jsonify({'error': result.get('error', 'Failed to create payment link')}), 500
+        
+    except Exception as e:
+        print(f"❌ Error creating payment: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/webhook/payos', methods=['POST'])
+def payos_webhook():
+    """
+    Webhook nhận thông báo từ PayOS khi thanh toán thành công
+    
+    PayOS sẽ gửi POST request với data:
     {
-        "id": transaction_id,
-        "amount": 100000,
-        "description": "email@example.com",
-        "when": "2025-10-22 11:30:00",
-        ...
+        "code": "00",
+        "desc": "success",
+        "data": {
+            "orderCode": 123456789,
+            "amount": 100000,
+            "description": "...",
+            "accountNumber": "...",
+            "reference": "...",
+            "transactionDateTime": "...",
+            ...
+        },
+        "signature": "..."
     }
     """
     try:
@@ -923,69 +989,64 @@ def casso_webhook():
         if not data:
             return jsonify({'error': 'No data'}), 400
         
-        print(f"📩 Received Casso webhook: {data}")
+        print(f"📩 Received PayOS webhook: {data}")
         
-        # Parse transaction info
-        transaction_id = data.get('id')
-        amount = int(data.get('amount', 0))
-        description = data.get('description', '').strip()
-        when = data.get('when')
+        # Lấy signature từ header hoặc data
+        signature = request.headers.get('x-signature') or data.get('signature')
         
-        # Tìm email trong description
-        customer_email = None
-        if description:
-            # Parse email từ description
-            import re
-            email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-            match = re.search(email_pattern, description)
-            if match:
-                customer_email = match.group(0).lower()
+        # Verify signature (nếu có)
+        # if signature and not verify_webhook_signature(data.get('data', {}), signature):
+        #     print("⚠️ Invalid signature")
+        #     return jsonify({'error': 'Invalid signature'}), 401
         
-        if not customer_email:
-            print(f"⚠️ No email found in description: {description}")
-            return jsonify({'error': 'No email in description'}), 400
+        # Parse payment info
+        payment_data = data.get('data', {})
+        code = data.get('code')
         
-        # Kiểm tra amount
-        if amount != 100000:
-            print(f"⚠️ Invalid amount: {amount}, expected: 100000")
-            return jsonify({'error': 'Invalid amount'}), 400
+        # Kiểm tra thanh toán thành công
+        if code != '00':
+            print(f"⚠️ Payment not successful: {code}")
+            return jsonify({'error': 'Payment not successful'}), 400
         
-        # Tìm order với email này
+        order_code = payment_data.get('orderCode')
+        amount = int(payment_data.get('amount', 0))
+        transaction_ref = payment_data.get('reference', '')
+        
+        if not order_code:
+            return jsonify({'error': 'No order code'}), 400
+        
+        # Tìm order
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         
         c.execute('''
-            SELECT order_id, payment_status 
+            SELECT order_id, customer_email, plan_type, payment_status 
             FROM orders 
-            WHERE customer_email = ? AND payment_status = 'pending'
-            ORDER BY created_at DESC
-            LIMIT 1
-        ''', (customer_email,))
+            WHERE order_id = ?
+        ''', (str(order_code),))
         
         order = c.fetchone()
         
         if not order:
-            # Tạo order mới nếu chưa có
-            order_id = generate_order_id()
-            created_at = datetime.datetime.now().isoformat()
-            
-            c.execute('''
-                INSERT INTO orders 
-                (order_id, plan_type, amount, customer_email, payment_method, payment_status, created_at, transaction_id)
-                VALUES (?, 'lifetime', ?, ?, 'bank_transfer', 'pending', ?, ?)
-            ''', (order_id, amount, customer_email, created_at, str(transaction_id)))
-            
-            conn.commit()
-        else:
-            order_id = order[0]
+            print(f"⚠️ Order not found: {order_code}")
+            conn.close()
+            return jsonify({'error': 'Order not found'}), 404
+        
+        order_id, customer_email, plan_type, payment_status = order
+        
+        # Kiểm tra đã thanh toán chưa
+        if payment_status == 'completed':
+            print(f"⚠️ Order already completed: {order_id}")
+            conn.close()
+            return jsonify({'success': True, 'message': 'Already processed'}), 200
         
         conn.close()
         
         # Tự động tạo license key
-        license_key = auto_generate_license(order_id, 'lifetime', customer_email, str(transaction_id))
+        license_key = auto_generate_license(order_id, plan_type, customer_email, transaction_ref)
         
         if license_key:
-            print(f"✅ Successfully processed Casso payment: {transaction_id}")
+            print(f"✅ Successfully processed PayOS payment: {order_code}")
             print(f"   Email: {customer_email}")
             print(f"   License: {license_key}")
             
@@ -998,38 +1059,46 @@ def casso_webhook():
             return jsonify({'error': 'Failed to generate license'}), 500
         
     except Exception as e:
-        print(f"❌ Casso webhook error: {e}")
+        print(f"❌ PayOS webhook error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/casso/test-webhook', methods=['POST'])
+@app.route('/api/payos/test-webhook', methods=['POST'])
 @require_admin_key
-def test_casso_webhook():
+def test_payos_webhook():
     """
-    Test endpoint để test Casso webhook manually
+    Test endpoint để test PayOS webhook manually
     POST: {
-        "email": "test@example.com",
-        "amount": 100000,
-        "transaction_id": "TEST123"
+        "order_id": "123456789",
+        "amount": 100000
     }
     """
     try:
         data = request.get_json()
-        email = data.get('email')
+        order_id = data.get('order_id')
         amount = data.get('amount', 100000)
-        transaction_id = data.get('transaction_id', 'TEST' + str(int(datetime.datetime.now().timestamp())))
+        
+        if not order_id:
+            return jsonify({'error': 'order_id is required'}), 400
         
         # Simulate webhook data
         webhook_data = {
-            'id': transaction_id,
-            'amount': amount,
-            'description': email,
-            'when': datetime.datetime.now().isoformat()
+            'code': '00',
+            'desc': 'success',
+            'data': {
+                'orderCode': int(order_id),
+                'amount': amount,
+                'description': 'Test payment',
+                'reference': 'TEST' + str(int(datetime.datetime.now().timestamp())),
+                'transactionDateTime': datetime.datetime.now().isoformat()
+            }
         }
         
         # Call webhook handler
         with app.test_client() as client:
-            response = client.post('/api/webhook/casso', 
+            response = client.post('/api/webhook/payos', 
                                  json=webhook_data,
                                  content_type='application/json')
             
