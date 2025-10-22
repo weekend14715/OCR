@@ -45,12 +45,36 @@ Render sẽ tự động rebuild với PayOS!
 https://[your-render-domain]/api/webhook/payos
 ```
 
-**Cách thêm:**
+**Cách thêm (theo [tài liệu PayOS](https://payos.vn/docs/du-lieu-tra-ve/webhook/)):**
 
 1. Vào **PayOS Dashboard**: https://my.payos.vn
-2. **Settings** → **Webhook**
+2. **Cài đặt** → **Webhook**
 3. Thêm URL: `https://your-app.onrender.com/api/webhook/payos`
 4. **Save**
+
+**PayOS sẽ tự động POST webhook khi thanh toán thành công với format:**
+
+```json
+{
+  "code": "00",
+  "desc": "success",
+  "success": true,
+  "data": {
+    "orderCode": 123,
+    "amount": 100000,
+    "description": "...",
+    "reference": "TF230204212323",
+    "transactionDateTime": "2023-02-04 18:25:00",
+    "currency": "VND",
+    "paymentLinkId": "...",
+    "code": "00",
+    "desc": "Thành công"
+  },
+  "signature": "8d8640d802576397a1ce45ebda7f835055768ac7ad2e0bfb77f9b8f12cca4c7f"
+}
+```
+
+**Server response phải là HTTP 2XX để confirm nhận được!** ✅
 
 ---
 
@@ -166,17 +190,22 @@ Server tự động tạo: `int(timestamp * 1000)`
 
 Ví dụ: `1729584000000`
 
-### ⚠️ Webhook Signature
+### ✅ Webhook Signature Verification
 
-Hiện tại webhook **không verify signature** (commented out).
+**ĐÃ BẬT** signature verification để bảo vệ khỏi fake webhooks!
 
-Để bật, uncomment dòng này trong `app.py`:
+PayOS gửi signature trong field `signature` hoặc header `x-signature`.
+
+Server tự động verify theo [tài liệu PayOS](https://payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature/):
 
 ```python
+# Đã enable trong app.py
 if signature and not verify_webhook_signature(data.get('data', {}), signature):
     print("⚠️ Invalid signature")
     return jsonify({'error': 'Invalid signature'}), 401
 ```
+
+**Chỉ webhook hợp lệ từ PayOS mới được xử lý!** 🔒
 
 ### ⚠️ Return URL
 
