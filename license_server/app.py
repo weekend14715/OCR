@@ -994,10 +994,10 @@ def payos_webhook():
         # Lấy signature từ header hoặc data
         signature = request.headers.get('x-signature') or data.get('signature')
         
-        # Verify signature (nếu có)
-        # if signature and not verify_webhook_signature(data.get('data', {}), signature):
-        #     print("⚠️ Invalid signature")
-        #     return jsonify({'error': 'Invalid signature'}), 401
+        # Verify signature (QUAN TRỌNG: bảo vệ khỏi fake webhooks)
+        if signature and not verify_webhook_signature(data.get('data', {}), signature):
+            print("⚠️ Invalid signature")
+            return jsonify({'error': 'Invalid signature'}), 401
         
         # Parse payment info
         payment_data = data.get('data', {})
