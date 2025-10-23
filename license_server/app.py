@@ -1087,10 +1087,22 @@ def get_order_status(order_id):
 # PAYOS PAYMENT INTEGRATION
 # ==============================================================================
 
+@app.route('/api/debug/payos-status', methods=['GET'])
+def debug_payos_status():
+    """Debug endpoint to check PayOS configuration"""
+    return jsonify({
+        'payos_enabled': PAYOS_ENABLED,
+        'has_client_id': bool(os.getenv('PAYOS_CLIENT_ID')),
+        'has_api_key': bool(os.getenv('PAYOS_API_KEY')),
+        'has_checksum_key': bool(os.getenv('PAYOS_CHECKSUM_KEY')),
+        'client_id_preview': os.getenv('PAYOS_CLIENT_ID', '')[:8] + '...' if os.getenv('PAYOS_CLIENT_ID') else 'NOT_SET'
+    }), 200
+
+
 @app.route('/api/payment/create-order', methods=['POST'])
 def create_payment_order():
     """
-    Tạo đơn hàng mới với PayOS + VietQR backup
+    Tạo đơn hàng mới - CHỈ DÙNG PAYOS (không dùng VietQR manual)
     POST: {
         "customer_email": "email@example.com",
         "plan_type": "lifetime",
@@ -1105,6 +1117,13 @@ def create_payment_order():
         
         if not customer_email or '@' not in customer_email:
             return jsonify({'error': 'Invalid email'}), 400
+        
+        # Kiểm tra PayOS có được kích hoạt không
+        if not PAYOS_ENABLED:
+            return jsonify({
+                'error': 'PayOS not configured',
+                'message': 'Payment system is not available. Please contact administrator.'
+            }), 503
         
         # Tạo order ID (số nguyên cho PayOS)
         order_id = int(datetime.datetime.now().timestamp() * 1000)
@@ -1123,60 +1142,47 @@ def create_payment_order():
         conn.commit()
         conn.close()
         
-        # Lấy thông tin bank (cho VietQR backup)
-        bank_info = VietQRPayment.get_bank_info()
-        
-        # Tạo VietQR URL (backup method)
-        vietqr_url = VietQRPayment.generate_vietqr_url(
-            bank_code=bank_info['bank_code'],
-            account_number=bank_info['account_number'],
-            account_name=bank_info['account_name'],
-            amount=amount,
-            description=customer_email
-        )
-        
-        # 🔥 TẠO PAYOS PAYMENT LINK
-        payos_result = None
-        if PAYOS_ENABLED:
-            try:
-                from payos_handler import create_payment_link
-                
-                payos_result = create_payment_link(
-                    order_id=order_id,
-                    amount=amount,
-                    description=f"Mua license OCR - {plan_type} - {customer_email}",
-                    customer_email=customer_email,
-                    return_url=f"https://ocr-uufr.onrender.com/success?order_id={order_id}",
-                    cancel_url="https://ocr-uufr.onrender.com/failed"
-                )
-                
-                if payos_result.get('success'):
-                    print(f"✅ PayOS Payment Link created: {payos_result.get('payment_link_id')}")
-                else:
-                    print(f"⚠️ PayOS failed: {payos_result.get('error')}")
-                    
-            except Exception as payos_error:
-                print(f"⚠️ PayOS error: {payos_error}")
-        
-        # Response với cả PayOS và VietQR
-        response_data = {
-            'success': True,
-            'order_id': str(order_id),
-            'bank_info': bank_info,
-            'amount': amount,
-            'transfer_content': customer_email,
-            'vietqr_url': vietqr_url
-        }
-        
-        # Thêm PayOS data nếu có
-        if payos_result and payos_result.get('success'):
-            response_data['payos'] = {
+        # 🔥 TẠO PAYOS PAYMENT LINK (CHỈ DÙNG PAYOS)
+        try:
+            from payos_handler import create_payment_link
+            
+            payos_result = create_payment_link(
+                order_id=order_id,
+                amount=amount,
+                description=f"Mua license OCR - {plan_type} - {customer_email}",
+                customer_email=customer_email,
+                return_url=f"https://ocr-uufr.onrender.com/success?order_id={order_id}",
+                cancel_url="https://ocr-uufr.onrender.com/failed"
+            )
+            
+            if not payos_result.get('success'):
+                error_msg = payos_result.get('error', 'Unknown error')
+                print(f"❌ PayOS failed: {error_msg}")
+                return jsonify({
+                    'error': 'Payment creation failed',
+                    'message': error_msg
+                }), 500
+            
+            print(f"✅ PayOS Payment Link created: {payos_result.get('payment_link_id')}")
+            
+            # Chỉ trả về PayOS data (không có VietQR)
+            return jsonify({
+                'success': True,
+                'order_id': str(order_id),
+                'amount': amount,
                 'checkout_url': payos_result.get('checkout_url'),
                 'qr_code': payos_result.get('qr_code'),
                 'payment_link_id': payos_result.get('payment_link_id')
-            }
-        
-        return jsonify(response_data), 200
+            }), 200
+            
+        except Exception as payos_error:
+            print(f"❌ PayOS error: {payos_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                'error': 'Payment system error',
+                'message': str(payos_error)
+            }), 500
         
     except Exception as e:
         print(f"❌ Error in create_payment_order: {e}")
