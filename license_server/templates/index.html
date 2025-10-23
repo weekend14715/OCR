@@ -507,25 +507,47 @@
                 if (data.success) {
                     currentOrderId = data.order_id;
                     
-                    // Show bank info
-                    document.getElementById('bankInfo').style.display = 'block';
-                    document.getElementById('bankName').innerText = data.bank_info.bank_name || 'MB Bank';
-                    document.getElementById('accountNumber').innerText = data.bank_info.account_number || 'Đang cập nhật';
-                    document.getElementById('accountName').innerText = data.bank_info.account_name || 'Đang cập nhật';
-                    document.getElementById('transferAmount').innerText = window.currentPlanPrice || '100,000₫';
-                    document.getElementById('transferContent').innerText = email;
-                    
-                    // Show VietQR code
-                    if (data.vietqr_url) {
-                        document.getElementById('qrCodeImage').src = data.vietqr_url;
+                    // 🔥 ƯU TIÊN PAYOS QR CODE (nếu có)
+                    if (data.payos && data.payos.qr_code) {
+                        // Hiển thị PayOS QR Code
+                        document.getElementById('qrCodeImage').src = data.payos.qr_code;
                         document.getElementById('qrCodeContainer').style.display = 'block';
+                        
+                        // Ẩn bank info (không cần chuyển khoản thủ công)
+                        document.getElementById('bankInfo').style.display = 'none';
+                        
+                        // Hide create button, show copy button
+                        btn.style.display = 'none';
+                        document.getElementById('copyEmailBtn').style.display = 'none';
+                        
+                        alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR PayOS để thanh toán tự động!\n\n✨ Sau khi thanh toán, license key sẽ được gửi về email ngay lập tức!');
+                        
+                        // Optional: Mở checkout URL trong tab mới
+                        if (data.payos.checkout_url) {
+                            console.log('PayOS Checkout URL:', data.payos.checkout_url);
+                            // window.open(data.payos.checkout_url, '_blank');
+                        }
+                    } else {
+                        // Fallback: Hiển thị VietQR (manual bank transfer)
+                        document.getElementById('bankInfo').style.display = 'block';
+                        document.getElementById('bankName').innerText = data.bank_info.bank_name || 'MB Bank';
+                        document.getElementById('accountNumber').innerText = data.bank_info.account_number || 'Đang cập nhật';
+                        document.getElementById('accountName').innerText = data.bank_info.account_name || 'Đang cập nhật';
+                        document.getElementById('transferAmount').innerText = window.currentPlanPrice || '100,000₫';
+                        document.getElementById('transferContent').innerText = email;
+                        
+                        // Show VietQR code
+                        if (data.vietqr_url) {
+                            document.getElementById('qrCodeImage').src = data.vietqr_url;
+                            document.getElementById('qrCodeContainer').style.display = 'block';
+                        }
+                        
+                        // Hide create button, show copy button
+                        btn.style.display = 'none';
+                        document.getElementById('copyEmailBtn').style.display = 'block';
+                        
+                        alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR để thanh toán nhanh!\n\nHoặc chuyển khoản thủ công theo thông tin bên dưới.\n\n⚠️ LƯU Ý: Nội dung CK phải là email của bạn!');
                     }
-                    
-                    // Hide create button, show copy button
-                    btn.style.display = 'none';
-                    document.getElementById('copyEmailBtn').style.display = 'block';
-                    
-                    alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR để thanh toán nhanh!\n\nHoặc chuyển khoản thủ công theo thông tin bên dưới.\n\n⚠️ LƯU Ý: Nội dung CK phải là email của bạn!');
                 } else {
                     alert('❌ Lỗi: ' + (data.error || 'Không thể tạo đơn hàng'));
                     btn.disabled = false;
