@@ -21,11 +21,11 @@ try:
     from payos_handler import PAYOS_ENABLED, create_payment_link, verify_webhook_signature, get_payment_info
     from payos_handler import app as payos_app  # Import Flask Blueprint
     if PAYOS_ENABLED:
-        print("✅ PayOS Payment đã được kích hoạt!")
+        print("PayOS Payment activated successfully!")
 except ImportError:
     PAYOS_ENABLED = False
     payos_app = None
-    print("⚠️  Warning: PayOS payment not available.")
+    print("Warning: PayOS payment not available.")
 
 # Import email sender
 try:
@@ -33,7 +33,7 @@ try:
     EMAIL_ENABLED = True
 except ImportError:
     EMAIL_ENABLED = False
-    print("⚠️  Warning: Email sender not available. Emails will not be sent.")
+    print("Warning: Email sender not available. Emails will not be sent.")
 
 app = Flask(__name__)
 CORS(app)
@@ -41,7 +41,7 @@ CORS(app)
 # Register PayOS Blueprint
 if payos_app:
     app.register_blueprint(payos_app, url_prefix='/payos')
-    print("✅ PayOS Blueprint registered at /payos/*")
+    print("PayOS Blueprint registered at /payos/*")
 
 # Cấu hình
 DATABASE = 'licenses.db'
@@ -1419,9 +1419,9 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("🚀 Vietnamese OCR Tool - License Server")
     print("="*60)
-    print(f"📡 Server running on: http://127.0.0.1:5000")
-    print(f"🔑 Admin API Key: {ADMIN_API_KEY}")
-    print("\n⚠️  IMPORTANT: Change ADMIN_API_KEY in production!")
+    print(f"Server running on: http://127.0.0.1:5000")
+    print(f"Admin API Key: {ADMIN_API_KEY}")
+    print("\nIMPORTANT: Change ADMIN_API_KEY in production!")
     print("="*60 + "\n")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

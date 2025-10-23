@@ -24,7 +24,7 @@ def init_payos():
     global payos_client
     
     if not PAYOS_CLIENT_ID or not PAYOS_API_KEY or not PAYOS_CHECKSUM_KEY:
-        print("⚠️  Warning: PayOS credentials not configured")
+        print("Warning: PayOS credentials not configured")
         return False
     
     try:
@@ -33,11 +33,11 @@ def init_payos():
             api_key=PAYOS_API_KEY,
             checksum_key=PAYOS_CHECKSUM_KEY
         )
-        print("✅ PayOS đã được kích hoạt!")
+        print("PayOS activated successfully!")
         print(f"   Available methods: {[m for m in dir(payos_client) if not m.startswith('_')]}")
         return True
     except Exception as e:
-        print(f"❌ Lỗi khởi tạo PayOS: {e}")
+        print(f"Error initializing PayOS: {e}")
         return False
 
 
@@ -100,7 +100,7 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             }
             
     except Exception as e:
-        print(f"❌ Lỗi tạo payment link: {e}")
+        print(f"Error creating payment link: {e}")
         return {
             'success': False,
             'error': str(e)
@@ -133,7 +133,7 @@ def verify_webhook_signature(webhook_data, signature):
         return hmac.compare_digest(expected_signature, signature)
         
     except Exception as e:
-        print(f"❌ Lỗi xác thực signature: {e}")
+        print(f"Error verifying signature: {e}")
         return False
 
 
@@ -154,7 +154,7 @@ def get_payment_info(order_id):
         response = payos_client.getPaymentLinkInformation(int(order_id))
         return response
     except Exception as e:
-        print(f"❌ Lỗi lấy thông tin thanh toán: {e}")
+        print(f"Error getting payment info: {e}")
         return None
 
 
@@ -176,7 +176,7 @@ def cancel_payment(order_id, reason=""):
         response = payos_client.cancelPaymentLink(int(order_id), reason)
         return True
     except Exception as e:
-        print(f"❌ Lỗi hủy thanh toán: {e}")
+        print(f"Error canceling payment: {e}")
         return False
 
 
