@@ -1,0 +1,218 @@
+================================================================================
+                    ✅ CODE SIGNING SETUP HOÀN TẤT!
+================================================================================
+
+🎉 ĐÃ TẠO THÀNH CÔNG HỆ THỐNG KÝ SỐ FILE .EXE
+
+================================================================================
+📦 FILES ĐÃ TẠO
+================================================================================
+
+📜 SCRIPTS (PowerShell):
+   ✅ create_self_signed_cert.ps1  - Tạo self-signed certificate
+   ✅ sign_exe.ps1                 - Ký file .exe
+   ✅ build_and_sign.ps1           - Build + Sign tự động
+   ✅ TEST_SIGNING.ps1             - Test toàn bộ quy trình
+
+🐍 DEMO APP:
+   ✅ test_signing_demo.py         - Demo GUI app để test signing
+
+📚 DOCUMENTATION:
+   ✅ CODE_SIGNING_SUMMARY.md      - Tổng quan toàn bộ hệ thống
+   ✅ QUICK_START.md               - Hướng dẫn bắt đầu nhanh
+   ✅ HOW_TO_USE_SIGNING.md        - Hướng dẫn chi tiết A-Z
+   ✅ SIGNING_GUIDE.md             - Tài liệu kỹ thuật
+   ✅ README_INSTALLATION.txt      - Hướng dẫn cho end users
+
+🔒 SECURITY:
+   ✅ .gitignore updated           - Bảo vệ .pfx files
+
+================================================================================
+🚀 BẮT ĐẦU NGAY (3 PHÚT)
+================================================================================
+
+OPTION 1: Test Demo (Khuyến nghị)
+────────────────────────────────────────────────────────────────────────────
+  
+  .\TEST_SIGNING.ps1
+
+  → Tạo cert + Build demo + Sign + Test
+  → Kết quả: dist\OCR_Demo.exe (signed)
+
+
+OPTION 2: Ký file .exe có sẵn
+────────────────────────────────────────────────────────────────────────────
+
+  # Bước 1: Tạo certificate (chỉ làm 1 lần)
+  .\create_self_signed_cert.ps1
+
+  # Bước 2: Ký file
+  .\sign_exe.ps1 -ExePath "path\to\your\app.exe"
+
+
+OPTION 3: Build từ Python + Sign
+────────────────────────────────────────────────────────────────────────────
+
+  .\build_and_sign.ps1
+
+  → Build .exe + Ký tự động
+  → Kết quả: dist\OCR.exe (signed)
+
+================================================================================
+🔑 CERTIFICATE INFO
+================================================================================
+
+Type:        Self-Signed Code Signing Certificate
+Subject:     CN=OCR License System
+File:        OCR_CodeSigning.pfx (auto-generated khi chạy script)
+Password:    OCR2024!
+Validity:    3 years
+Location:    Cert:\CurrentUser\My
+
+⚠️  BẢO MẬT:
+   ❌ KHÔNG commit .pfx lên Git (đã add vào .gitignore)
+   ❌ KHÔNG share password công khai
+   ✅ Backup file .pfx an toàn
+
+================================================================================
+📊 WORKFLOW
+================================================================================
+
+┌─────────────────────┐
+│ 1. Write Python     │
+│    code             │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ 2. Run:             │
+│    build_and_sign   │  ← Chạy script này
+│    .ps1             │
+└──────────┬──────────┘
+           │
+           ├─► Build .exe (PyInstaller)
+           │
+           ├─► Sign .exe (Certificate)
+           │
+           └─► Verify signature
+                     │
+                     ▼
+           ┌─────────────────────┐
+           │ 3. dist\OCR.exe     │
+           │    (Signed ✓)       │
+           └──────────┬──────────┘
+                      │
+                      ▼
+           ┌─────────────────────┐
+           │ 4. Package & Ship   │
+           │    - .exe           │
+           │    - README.txt     │
+           │    - Zip & Release  │
+           └─────────────────────┘
+
+================================================================================
+✅ LỢI ÍCH
+================================================================================
+
+✅ Giảm cảnh báo Windows SmartScreen
+✅ File .exe có chữ ký số
+✅ Tăng độ tin cậy cho users
+✅ Chứng minh file integrity (không bị sửa đổi)
+✅ Tự động hóa build + sign
+✅ Professional appearance
+
+⚠️  Lưu ý: Self-signed cert vẫn hiện "Unknown Publisher"
+    → Để loại bỏ hoàn toàn: Mua EV Certificate ($400/năm)
+
+================================================================================
+📖 TÀI LIỆU
+================================================================================
+
+Mới bắt đầu?          → Đọc: QUICK_START.md
+Muốn hiểu chi tiết?   → Đọc: HOW_TO_USE_SIGNING.md
+Cần thông tin kỹ thuật? → Đọc: SIGNING_GUIDE.md
+Tổng quan hệ thống?   → Đọc: CODE_SIGNING_SUMMARY.md
+Hướng dẫn users?      → Cho users: README_INSTALLATION.txt
+
+================================================================================
+🎯 NEXT STEPS
+================================================================================
+
+NGAY BÂY GIỜ:
+   1. ✅ Chạy: .\TEST_SIGNING.ps1
+   2. ✅ Verify demo works
+   3. ✅ Sign ứng dụng thật của bạn
+
+TRONG TUẦN NÀY:
+   1. Package first release
+   2. Upload lên VirusTotal
+   3. Test trên Windows mới
+   4. Gather user feedback
+
+3-6 THÁNG SAU:
+   1. Track user count
+   2. Nếu 100+ users → Mua OV Certificate ($200/năm)
+   3. Nếu 1000+ users → Upgrade EV Certificate ($400/năm)
+   4. Setup CI/CD auto-signing
+
+================================================================================
+🧪 VERIFY SIGNATURE
+================================================================================
+
+PowerShell:
+   Get-AuthenticodeSignature "dist\OCR.exe"
+
+Windows UI:
+   Chuột phải .exe → Properties → Digital Signatures
+
+Expected:
+   ✅ SignerCertificate: CN=OCR License System
+   ✅ Status: Valid (hoặc UnknownError cho self-signed - OK!)
+   ✅ Timestamp: DigiCert Timestamp
+
+================================================================================
+❓ TROUBLESHOOTING
+================================================================================
+
+Issue: "Cannot create certificate"
+Fix:   Chạy PowerShell với quyền Administrator
+
+Issue: "Set-AuthenticodeSignature failed"
+Fix:   .\sign_exe.ps1 -ExePath "app.exe" -PfxFile "OCR_CodeSigning.pfx"
+
+Issue: Certificate expired
+Fix:   .\create_self_signed_cert.ps1 (tạo mới)
+
+Issue: Vẫn bị cảnh báo virus
+Fix:   Upload lên VirusTotal, share link scan với users
+
+================================================================================
+📞 RESOURCES
+================================================================================
+
+Microsoft Docs:  https://docs.microsoft.com/en-us/windows/win32/seccrypto/
+VirusTotal:      https://www.virustotal.com
+DigiCert EV:     https://www.digicert.com ($599/year)
+Sectigo EV:      https://sectigo.com ($299/year)
+GlobalSign:      https://www.globalsign.com ($399/year)
+
+================================================================================
+🎊 CHÚC MỪNG!
+================================================================================
+
+Bạn đã setup hoàn chỉnh Code Signing system!
+
+✅ Self-signed certificate ready
+✅ Automated signing scripts
+✅ Complete documentation
+✅ Test suite
+✅ Security best practices
+
+→ SẴN SÀNG KÝ VÀ PHÁT HÀNH ỨNG DỤNG!
+
+================================================================================
+🚀 START NOW: .\TEST_SIGNING.ps1
+================================================================================
+
+© 2024 OCR License System | Code Signing v1.0.0
+
