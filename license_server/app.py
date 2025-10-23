@@ -18,7 +18,7 @@ from payment_gateway import (
 )
 # Import PayOS payment
 try:
-    from payos_handler import PAYOS_ENABLED, create_payment_link, verify_webhook_signature, get_payment_info
+    from payos_handler import PAYOS_ENABLED, create_payment_link
     from payos_handler import app as payos_app  # Import Flask Blueprint
     if PAYOS_ENABLED:
         print("PayOS Payment activated successfully!")
@@ -1233,138 +1233,63 @@ def create_payos_payment():
         return jsonify({'error': str(e)}), 500
 
 
+# ⚠️ DEPRECATED: This webhook is replaced by /payos/webhook (in payos_handler.py)
+# Keeping for backward compatibility only
 @app.route('/api/webhook/payos', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
-def payos_webhook():
+def payos_webhook_legacy():
     """
-    Webhook nhận thông báo từ PayOS khi thanh toán thành công
+    [DEPRECATED] Legacy PayOS webhook - redirects to new handler
     
-    Docs: https://payos.vn/docs/tich-hop-webhook/
-    
-    PayOS sẽ gửi POST request với data:
-    {
-        "code": "00",
-        "desc": "success",
-        "success": true,
-        "data": {
-            "orderCode": 123,
-            "amount": 3000,
-            "description": "VQRIO123",
-            "accountNumber": "12345678",
-            "reference": "TF230204212323",
-            "transactionDateTime": "2023-02-04 18:25:00",
-            "currency": "VND",
-            "paymentLinkId": "124c33293c43417ab7879e14c8d9eb18",
-            "code": "00",
-            "desc": "Thành công",
-            ...
-        },
-        "signature": "8d8640d802576397a1ce45ebda7f835055768ac7ad2e0bfb77f9b8f12cca4c7f"
-    }
-    
-    Server phải response status code 2XX để confirm webhook nhận thành công.
+    Use /payos/webhook instead (handled by payos_handler.py Blueprint)
     """
-    # PayOS test webhook bằng GET/HEAD/OPTIONS request
+    print("⚠️ Warning: Using deprecated webhook /api/webhook/payos")
+    print("   Please update webhook URL to: /payos/webhook")
+    
+    # Redirect to new webhook handler
     if request.method in ['GET', 'HEAD', 'OPTIONS']:
-        response = jsonify({'status': 'webhook_ready', 'service': 'payos', 'version': '1.0'})
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-signature'
-        return response, 200
+        return jsonify({
+            'status': 'deprecated',
+            'message': 'Please use /payos/webhook instead',
+            'new_url': 'https://ocr-uufr.onrender.com/payos/webhook'
+        }), 200
     
+    # For POST, try to process with auto_generate_license
     try:
-        # Lấy data từ webhook
         data = request.get_json()
-        
-        # PayOS có thể gửi empty request để test → return OK
         if not data:
             return jsonify({'status': 'ok', 'message': 'Webhook ready'}), 200
         
-        print(f"📩 Received PayOS webhook: {data}")
-        
-        # Lấy signature từ body (theo docs PayOS)
-        signature = data.get('signature')
-        
-        # TODO: Verify signature (TẠM THỜI TẮT ĐỂ TEST)
-        # PayOS webhook signature verification sẽ được thêm sau
-        # https://payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature/
-        if signature:
-            print(f"📝 Signature received: {signature[:20]}...")
-        
-        # Parse payment info (theo docs PayOS)
         payment_data = data.get('data', {})
-        code = data.get('code')
-        success = data.get('success', False)
-        desc = data.get('desc', '')
-        
-        # Kiểm tra thanh toán thành công (theo docs: success=true hoặc code="00")
-        if not success and code != '00':
-            print(f"⚠️ Payment not successful: code={code}, desc={desc}")
-            return jsonify({'error': 'Payment not successful'}), 400
-        
         order_code = payment_data.get('orderCode')
-        amount = int(payment_data.get('amount', 0))
-        transaction_ref = payment_data.get('reference', '')
-        payment_link_id = payment_data.get('paymentLinkId', '')
-        transaction_datetime = payment_data.get('transactionDateTime', '')
-        
-        print(f"💳 Payment details:")
-        print(f"   Order Code: {order_code}")
-        print(f"   Amount: {amount:,} VND")
-        print(f"   Reference: {transaction_ref}")
-        print(f"   Payment Link: {payment_link_id}")
-        print(f"   Time: {transaction_datetime}")
         
         if not order_code:
-            print(f"❌ Missing order code in webhook data")
             return jsonify({'error': 'No order code'}), 400
         
-        # Tìm order
+        # Find order and generate license
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        
-        c.execute('''
-            SELECT order_id, customer_email, plan_type, payment_status 
-            FROM orders 
-            WHERE order_id = ?
-        ''', (str(order_code),))
-        
+        c.execute('SELECT order_id, customer_email, plan_type, payment_status FROM orders WHERE order_id = ?', (str(order_code),))
         order = c.fetchone()
+        conn.close()
         
         if not order:
-            print(f"⚠️ Order not found: {order_code}")
-            conn.close()
             return jsonify({'error': 'Order not found'}), 404
         
         order_id, customer_email, plan_type, payment_status = order
         
-        # Kiểm tra đã thanh toán chưa
         if payment_status == 'completed':
-            print(f"⚠️ Order already completed: {order_id}")
-            conn.close()
             return jsonify({'success': True, 'message': 'Already processed'}), 200
         
-        conn.close()
-        
-        # Tự động tạo license key
+        transaction_ref = payment_data.get('reference', '')
         license_key = auto_generate_license(order_id, plan_type, customer_email, transaction_ref)
         
         if license_key:
-            print(f"✅ Successfully processed PayOS payment: {order_code}")
-            print(f"   Email: {customer_email}")
-            print(f"   License: {license_key}")
-            
-            return jsonify({
-                'success': True,
-                'order_id': order_id,
-                'license_key': license_key
-            }), 200
+            return jsonify({'success': True, 'order_id': order_id, 'license_key': license_key}), 200
         else:
             return jsonify({'error': 'Failed to generate license'}), 500
-        
+            
     except Exception as e:
-        print(f"❌ PayOS webhook error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Legacy webhook error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
