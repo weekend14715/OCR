@@ -311,10 +311,18 @@
 
             try {
                 // Query license info from server
+                console.log(`🔍 Fetching order info for: ${orderId}`);
                 const response = await fetch(`/api/payment/check-order?order_id=${orderId}`);
+                
+                console.log(`📡 Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
 
-                console.log('Order info:', data);
+                console.log('✅ Order info:', data);
 
                 if (data.success && data.license_key) {
                     // Show success
@@ -355,7 +363,13 @@
             } catch (error) {
                 console.error('❌ Error loading payment info:', error);
                 stopPolling();
-                showError('❌ Lỗi kết nối server!\n\nVui lòng kiểm tra email để nhận license key.');
+                
+                // Show detailed error for debugging
+                let errorMessage = '❌ Lỗi kết nối server!\n\n';
+                errorMessage += `Chi tiết: ${error.message}\n\n`;
+                errorMessage += 'Vui lòng kiểm tra email để nhận license key.';
+                
+                showError(errorMessage);
             }
         }
 

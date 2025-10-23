@@ -178,7 +178,10 @@ def check_order():
     try:
         order_id = request.args.get('order_id', '').strip()
         
+        print(f"\n[CHECK-ORDER] 🔍 Request for order_id: {order_id}")
+        
         if not order_id:
+            print(f"[CHECK-ORDER] ❌ Missing order_id")
             return jsonify({
                 'success': False,
                 'error': 'Missing order_id parameter'
@@ -200,6 +203,7 @@ def check_order():
         conn.close()
         
         if not result:
+            print(f"[CHECK-ORDER] ❌ Order not found: {order_id}")
             return jsonify({
                 'success': False,
                 'error': 'Order not found'
@@ -207,8 +211,11 @@ def check_order():
         
         order_id, email, plan_type, payment_status, license_key, expiry_date, license_status = result
         
+        print(f"[CHECK-ORDER] 📦 Found order: payment_status={payment_status}, has_license={bool(license_key)}")
+        
         # Check if payment completed and license generated
         if payment_status == 'completed' and license_key:
+            print(f"[CHECK-ORDER] ✅ Returning completed order with license")
             return jsonify({
                 'success': True,
                 'order_id': order_id,
@@ -220,13 +227,15 @@ def check_order():
                 'license_status': license_status
             }), 200
         else:
+            error_msg = 'Payment not completed yet' if payment_status == 'pending' else 'License not generated'
+            print(f"[CHECK-ORDER] ⏳ Order not ready: {error_msg}")
             return jsonify({
                 'success': False,
                 'order_id': order_id,
                 'email': email,
                 'plan_type': plan_type,
                 'payment_status': payment_status,
-                'error': 'Payment not completed yet' if payment_status == 'pending' else 'License not generated'
+                'error': error_msg
             }), 200
             
     except Exception as e:
