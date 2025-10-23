@@ -95,9 +95,6 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         return {'success': False, 'error': 'PayOS not initialized'}
     
     try:
-        # Import types inside function to avoid circular imports
-        from payos.types import ItemData, CreatePaymentLinkRequest
-        
         # Ensure order_id is integer - if not provided or invalid, generate unique one
         try:
             order_code = int(order_id)
@@ -105,48 +102,75 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             print(f"[PayOS] Invalid order_id '{order_id}', generating new unique ID...")
             order_code = generate_unique_order_id()
         
-        # PayOS requires items array (mandatory in v1.0.0)
-        item = ItemData(
-            name=description[:25] if len(description) <= 25 else "License Key",
-            quantity=1,
-            price=int(amount)
-        )
+        # ✅ ĐÚNG CÁCH: Sử dụng payment_requests.create() với dict data
+        # KHÔNG cần import ItemData, CreatePaymentLinkRequest
+        payment_data = {
+            "orderCode": order_code,
+            "amount": int(amount),
+            "description": description[:25],  # PayOS v1.0.0 limit: max 25 characters
+            "returnUrl": return_url or "https://ocr-uufr.onrender.com/payment/success",
+            "cancelUrl": cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
+        }
         
-        # Create payment request with proper types
-        payment_data = CreatePaymentLinkRequest(
-            orderCode=order_code,
-            amount=int(amount),
-            description=description[:25],  # PayOS v1.0.0 limit: max 25 characters
-            items=[item],  # Required field
-            returnUrl=return_url or "https://ocr-uufr.onrender.com/payment/success",
-            cancelUrl=cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
-        )
-        
-        print(f"[PayOS] Creating payment link: Order {order_code}, Amount {amount:,} VND")
+        print(f"[PayOS] Creating payment request: Order {order_code}, Amount {amount:,} VND")
         print(f"[PayOS] Description: {description[:25]}")
         
-        # PayOS v1.0.0 API: payment_links.create()
-        print(f"[PayOS] Calling payment_links.create()...")
-        response = payos_client.payment_links.create(payment_data)
+        # ✅ PayOS v1.0.0 API: payment_requests.create() (KHÔNG phải payment_links)
+        print(f"[PayOS] Calling payment_requests.create()...")
+        response = payos_client.payment_requests.create(payment_data)
         
         print(f"[PayOS] Response received: {type(response)}")
-        print(f"[PayOS] Response attributes: {dir(response)}")
-        print(f"[PayOS] Response content: {response}")
+        print(f"[PayOS] Response attributes: {[attr for attr in dir(response) if not attr.startswith('_')]}")
         
         if response:
-            print(f"[PayOS] ✅ Payment link created successfully!")
+            print(f"[PayOS] ✅ Payment request created successfully!")
             
-            # Extract fields safely
-            payment_link_id = getattr(response, 'paymentLinkId', None) or getattr(response, 'payment_link_id', 'unknown')
-            checkout_url = getattr(response, 'checkoutUrl', None) or getattr(response, 'checkout_url', '')
-            qr_code = getattr(response, 'qrCode', None) or getattr(response, 'qr_code', '')
+            # Extract fields - try multiple attribute names and dict access
+            payment_link_id = None
+            checkout_url = None
+            qr_code = None
             
-            print(f"[PayOS]    Link ID: {payment_link_id}")
-            print(f"[PayOS]    Checkout URL: {checkout_url}")
-            print(f"[PayOS]    QR Code: {'Present' if qr_code else 'MISSING'} (length: {len(qr_code) if qr_code else 0})")
+            # Try as object attributes first
+            for attr in ['paymentLinkId', 'payment_link_id', 'id', 'orderId', 'order_id']:
+                if hasattr(response, attr):
+                    payment_link_id = getattr(response, attr)
+                    break
+            
+            for attr in ['checkoutUrl', 'checkout_url', 'paymentUrl', 'payment_url', 'url']:
+                if hasattr(response, attr):
+                    checkout_url = getattr(response, attr)
+                    break
+            
+            for attr in ['qrCode', 'qr_code', 'qrCodeUrl', 'qr_code_url']:
+                if hasattr(response, attr):
+                    qr_code = getattr(response, attr)
+                    break
+            
+            # Try as dict if response is dict-like
+            if isinstance(response, dict):
+                payment_link_id = payment_link_id or response.get('paymentLinkId') or response.get('payment_link_id') or response.get('id')
+                checkout_url = checkout_url or response.get('checkoutUrl') or response.get('checkout_url') or response.get('paymentUrl')
+                qr_code = qr_code or response.get('qrCode') or response.get('qr_code')
+            
+            # Try response.data if exists
+            if hasattr(response, 'data') and isinstance(response.data, dict):
+                data = response.data
+                payment_link_id = payment_link_id or data.get('paymentLinkId') or data.get('id')
+                checkout_url = checkout_url or data.get('checkoutUrl') or data.get('checkout_url')
+                qr_code = qr_code or data.get('qrCode') or data.get('qr_code')
+            
+            # Default values
+            payment_link_id = payment_link_id or str(order_code)
+            checkout_url = checkout_url or ''
+            qr_code = qr_code or ''
+            
+            print(f"[PayOS]    Payment ID: {payment_link_id}")
+            print(f"[PayOS]    Checkout URL: {checkout_url[:80]}..." if len(checkout_url) > 80 else f"[PayOS]    Checkout URL: {checkout_url}")
+            print(f"[PayOS]    QR Code: {'✅ Present' if qr_code else '❌ MISSING'} (length: {len(qr_code) if qr_code else 0})")
             
             if not checkout_url:
                 print(f"[PayOS] ⚠️ WARNING: No checkout URL in response!")
+                print(f"[PayOS] Full response: {response}")
                 return {'success': False, 'error': 'No checkout URL in PayOS response'}
             
             return {
