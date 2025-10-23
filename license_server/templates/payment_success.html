@@ -282,6 +282,11 @@
             });
         }
 
+        // Polling state
+        let pollAttempts = 0;
+        const MAX_POLL_ATTEMPTS = 10; // Poll for 30 seconds max (10 * 3s)
+        let pollInterval = null;
+
         // Load payment info
         async function loadPaymentInfo() {
             const orderId = getUrlParameter('order_id') || getUrlParameter('orderCode');
@@ -313,6 +318,7 @@
 
                 if (data.success && data.license_key) {
                     // Show success
+                    stopPolling();
                     licenseKeyValue = data.license_key;
                     document.getElementById('licenseKey').innerText = data.license_key;
                     document.getElementById('customerEmail').innerText = data.email || 'Không xác định';
@@ -320,15 +326,43 @@
                     document.getElementById('loadingState').style.display = 'none';
                     document.getElementById('successState').style.display = 'block';
                 } else if (data.payment_status === 'pending') {
-                    // Payment still pending
-                    showError('⏳ Thanh toán đang chờ xử lý...\n\nLicense key sẽ được gửi tới email khi thanh toán hoàn tất.');
+                    // Payment still pending - start polling if not already
+                    pollAttempts++;
+                    console.log(`⏳ Payment pending, polling attempt ${pollAttempts}/${MAX_POLL_ATTEMPTS}`);
+                    
+                    if (pollAttempts < MAX_POLL_ATTEMPTS) {
+                        // Update loading message
+                        document.getElementById('loadingState').innerHTML = `
+                            <div class="spinner"></div>
+                            <p>⏳ Đang xử lý thanh toán...</p>
+                            <p style="font-size: 14px; color: #666;">Đợi ${pollAttempts * 3}s, đang kiểm tra lại...</p>
+                        `;
+                        
+                        // Start polling if not already started
+                        if (!pollInterval) {
+                            pollInterval = setInterval(loadPaymentInfo, 3000); // Check every 3s
+                        }
+                    } else {
+                        // Max attempts reached
+                        stopPolling();
+                        showError('⏳ Thanh toán đang chờ xử lý...\n\nLicense key sẽ được gửi tới email khi thanh toán hoàn tất.\n\n(Có thể mất 1-2 phút)');
+                    }
                 } else {
                     // Error
+                    stopPolling();
                     showError(data.error || 'Không tìm thấy thông tin license.');
                 }
             } catch (error) {
                 console.error('❌ Error loading payment info:', error);
+                stopPolling();
                 showError('❌ Lỗi kết nối server!\n\nVui lòng kiểm tra email để nhận license key.');
+            }
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
             }
         }
 
