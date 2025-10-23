@@ -507,35 +507,42 @@
                 if (data.success) {
                     currentOrderId = data.order_id;
                     
-                    // 🔥 CHỈ DÙNG PAYOS QR CODE
-                    if (data.qr_code) {
-                        // Hiển thị PayOS QR Code
+                    // Log thông tin
+                    console.log('✅ PayOS Payment Created');
+                    console.log('Order ID:', data.order_id);
+                    console.log('Payment Link ID:', data.payment_link_id);
+                    console.log('Amount:', data.amount);
+                    console.log('QR Code:', data.qr_code ? `Present (${data.qr_code.length} chars)` : 'MISSING');
+                    console.log('Checkout URL:', data.checkout_url);
+                    
+                    // 🔥 CHECK QR CODE
+                    if (data.qr_code && data.qr_code.length > 10) {
+                        // Có QR Code → Hiển thị trên trang
+                        console.log('→ Displaying QR code on page');
                         document.getElementById('qrCodeImage').src = data.qr_code;
                         document.getElementById('qrCodeContainer').style.display = 'block';
-                        
-                        // Ẩn bank info (không cần chuyển khoản thủ công)
                         document.getElementById('bankInfo').style.display = 'none';
                         
-                        // Hide create button, show copy button
                         btn.style.display = 'none';
                         document.getElementById('copyEmailBtn').style.display = 'none';
                         
-                        alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR PayOS để thanh toán tự động!\n\n✨ Sau khi thanh toán, license key sẽ được gửi về email ngay lập tức!');
+                        alert('✅ Đơn hàng đã được tạo!\n\n📱 Quét mã QR để thanh toán!\n\n✨ Sau khi thanh toán, license key sẽ được gửi về email ngay!');
                         
-                        // Log thông tin
-                        console.log('✅ PayOS Payment Created');
-                        console.log('Order ID:', data.order_id);
-                        console.log('Payment Link ID:', data.payment_link_id);
-                        console.log('Amount:', data.amount);
+                    } else if (data.checkout_url) {
+                        // Không có QR → Redirect tới PayOS payment page
+                        console.log('→ QR not available, redirecting to PayOS checkout page');
                         
-                        // Optional: Mở checkout URL trong tab mới
-                        if (data.checkout_url) {
-                            console.log('PayOS Checkout URL:', data.checkout_url);
-                            // window.open(data.checkout_url, '_blank');
-                        }
+                        alert('✅ Đơn hàng đã được tạo!\n\n🔄 Đang chuyển tới trang thanh toán PayOS...\n\n📱 Bạn sẽ thấy mã QR ở trang tiếp theo!');
+                        
+                        // Redirect to PayOS checkout page (has QR code)
+                        setTimeout(() => {
+                            window.location.href = data.checkout_url;
+                        }, 1500);
+                        
                     } else {
-                        // Không có PayOS QR = Lỗi
-                        alert('❌ Lỗi tạo thanh toán!\n\nVui lòng thử lại sau hoặc liên hệ hỗ trợ.');
+                        // Không có cả QR và checkout URL = Lỗi
+                        console.error('❌ No QR code and no checkout URL!');
+                        alert('❌ Lỗi tạo thanh toán!\n\nKhông nhận được link thanh toán. Vui lòng thử lại.');
                         btn.disabled = false;
                         btn.innerText = 'Tạo Đơn Hàng';
                     }
