@@ -112,44 +112,35 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         
         if response:
             print(f"[PayOS] ✅ Payment link created successfully!")
-            print(f"[PayOS] Response type: {type(response)}")
-            print(f"[PayOS] Response attributes: {dir(response)}")
-            
-            # Try to extract fields (handle both dict and object)
-            if hasattr(response, 'checkoutUrl'):
-                checkout_url = response.checkoutUrl
-                qr_code = response.qrCode
-                payment_link_id = response.paymentLinkId
-            elif isinstance(response, dict):
-                checkout_url = response.get('checkoutUrl', '')
-                qr_code = response.get('qrCode', '')
-                payment_link_id = response.get('paymentLinkId', '')
-            else:
-                print(f"[PayOS] ⚠️ Unknown response format: {response}")
-                return {'success': False, 'error': 'Unknown response format'}
-            
-            print(f"[PayOS]    Link ID: {payment_link_id}")
-            print(f"[PayOS]    Checkout URL: {checkout_url}")
-            print(f"[PayOS]    QR Code: {qr_code[:50] if qr_code else 'None'}...")
+            print(f"[PayOS]    Link ID: {response.paymentLinkId}")
+            print(f"[PayOS]    Checkout URL: {response.checkoutUrl}")
             
             return {
                 'success': True,
-                'checkout_url': checkout_url,
-                'qr_code': qr_code,
+                'checkout_url': response.checkoutUrl,
+                'qr_code': response.qrCode,
                 'order_id': str(order_id),
                 'amount': int(amount),
-                'payment_link_id': payment_link_id
+                'payment_link_id': response.paymentLinkId
             }
         else:
             return {'success': False, 'error': 'No response from PayOS'}
             
     except ValueError as e:
-        print(f"❌ Invalid order_id format: {e}")
-        return {'success': False, 'error': f'Invalid order_id: {e}'}
-    except Exception as e:
-        print(f"❌ Error creating payment link: {e}")
+        error_msg = f"Invalid order_id format: {e}"
+        print(f"❌ {error_msg}")
         traceback.print_exc()
-        return {'success': False, 'error': str(e)}
+        return {'success': False, 'error': error_msg}
+    except AttributeError as e:
+        error_msg = f"PayOS response attribute error: {e}"
+        print(f"❌ {error_msg}")
+        traceback.print_exc()
+        return {'success': False, 'error': error_msg}
+    except Exception as e:
+        error_msg = f"Error creating payment link: {e}"
+        print(f"❌ {error_msg}")
+        traceback.print_exc()
+        return {'success': False, 'error': error_msg}
 
 
 # Initialize PayOS
