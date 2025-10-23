@@ -59,6 +59,7 @@ PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 def init_db():
     """Khởi tạo database"""
+    print(f"[INIT-DB] 🔧 Initializing database at: {DATABASE}")
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     
@@ -73,6 +74,7 @@ def init_db():
             expiry_date TEXT,
             plan_type TEXT NOT NULL,
             is_active INTEGER DEFAULT 1,
+            status TEXT DEFAULT 'active',
             created_at TEXT NOT NULL,
             last_validated TEXT,
             order_id TEXT
@@ -109,9 +111,25 @@ def init_db():
         )
     ''')
     
+    # Migration: Add 'status' column to licenses table if it doesn't exist
+    try:
+        c.execute("SELECT status FROM licenses LIMIT 1")
+    except sqlite3.OperationalError:
+        print("⚠️  Adding missing 'status' column to licenses table...")
+        c.execute("ALTER TABLE licenses ADD COLUMN status TEXT DEFAULT 'active'")
+        c.execute("UPDATE licenses SET status = CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END")
+        print("✓ Migration completed: 'status' column added")
+    
     conn.commit()
     conn.close()
     print("✓ Database initialized")
+
+# Auto-initialize database on startup (for Gunicorn/production)
+try:
+    init_db()
+    print("[STARTUP] ✅ Database auto-initialized")
+except Exception as e:
+    print(f"[STARTUP] ⚠️  Database init error (will retry): {e}")
 
 # ==============================================================================
 # HELPER FUNCTIONS
@@ -179,6 +197,8 @@ def check_order():
         order_id = request.args.get('order_id', '').strip()
         
         print(f"\n[CHECK-ORDER] 🔍 Request for order_id: {order_id}")
+        print(f"[CHECK-ORDER] 📂 Database path: {DATABASE}")
+        print(f"[CHECK-ORDER] 📂 Database exists: {os.path.exists(DATABASE)}")
         
         if not order_id:
             print(f"[CHECK-ORDER] ❌ Missing order_id")
@@ -188,18 +208,36 @@ def check_order():
             }), 400
         
         # Query database
-        conn = sqlite3.connect(DATABASE)
-        c = conn.cursor()
+        try:
+            conn = sqlite3.connect(DATABASE)
+            c = conn.cursor()
+        except Exception as db_error:
+            print(f"[CHECK-ORDER] ❌ Database connection error: {db_error}")
+            return jsonify({
+                'success': False,
+                'error': f'Database error: {str(db_error)}'
+            }), 500
         
-        c.execute('''
-            SELECT o.order_id, o.customer_email, o.plan_type, o.payment_status, 
-                   l.license_key, l.expiry_date, l.status
-            FROM orders o
-            LEFT JOIN licenses l ON o.order_id = l.order_id
-            WHERE o.order_id = ?
-        ''', (str(order_id),))
+        try:
+            c.execute('''
+                SELECT o.order_id, o.customer_email, o.plan_type, o.payment_status, 
+                       l.license_key, l.expiry_date, l.status
+                FROM orders o
+                LEFT JOIN licenses l ON o.order_id = l.order_id
+                WHERE o.order_id = ?
+            ''', (str(order_id),))
+            
+            result = c.fetchone()
+        except Exception as sql_error:
+            conn.close()
+            print(f"[CHECK-ORDER] ❌ SQL query error: {sql_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                'success': False,
+                'error': f'SQL error: {str(sql_error)}'
+            }), 500
         
-        result = c.fetchone()
         conn.close()
         
         if not result:
