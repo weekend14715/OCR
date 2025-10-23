@@ -453,14 +453,14 @@ def simulate_payment():
         POST /payos/simulate
         Body: {
             "orderCode": 123456,
-            "amount": 10000,
+            "amount": 2000,
             "description": "Test payment"
         }
     """
     try:
         test_data = request.get_json()
         order_code = test_data.get('orderCode', 123456)
-        amount = test_data.get('amount', 10000)
+        amount = test_data.get('amount', 2000)
         
         # Create fake PayOS webhook payload
         fake_webhook = {

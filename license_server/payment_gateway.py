@@ -60,8 +60,8 @@ ZALOPAY_CONFIG = {
 # ===================================
 PRICING = {
     'test': {
-        'name': 'Test Plan (1,000đ)',
-        'price': 1000,
+        'name': 'Test Plan (2,000đ)',
+        'price': 2000,
         'duration_days': 1,  # 1 ngày để test
         'plan_type': 'test'
     },
