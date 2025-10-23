@@ -1205,15 +1205,30 @@ def create_payment_order():
             
             print(f"✅ PayOS Payment Link created: {payos_result.get('payment_link_id')}")
             
+            # 🔥 DEBUG: Log chi tiết response data
+            print("========== BACKEND RESPONSE DATA ==========")
+            print(f"payos_result keys: {list(payos_result.keys())}")
+            print(f"checkout_url: {payos_result.get('checkout_url')}")
+            print(f"qr_code: {'Present' if payos_result.get('qr_code') else 'MISSING'}")
+            if payos_result.get('qr_code'):
+                qr_len = len(payos_result.get('qr_code', ''))
+                print(f"qr_code length: {qr_len}")
+                print(f"qr_code first 50 chars: {payos_result.get('qr_code', '')[:50]}")
+            print(f"payment_link_id: {payos_result.get('payment_link_id')}")
+            print("==========================================")
+            
             # Chỉ trả về PayOS data (không có VietQR)
-            return jsonify({
+            response_data = {
                 'success': True,
                 'order_id': str(order_id),
                 'amount': amount,
                 'checkout_url': payos_result.get('checkout_url'),
                 'qr_code': payos_result.get('qr_code'),
                 'payment_link_id': payos_result.get('payment_link_id')
-            }), 200
+            }
+            
+            print(f"Sending to frontend: {list(response_data.keys())}")
+            return jsonify(response_data), 200
             
         except Exception as payos_error:
             print(f"❌ PayOS error: {payos_error}")

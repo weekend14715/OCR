@@ -504,16 +504,37 @@
                 
                 const data = await response.json();
                 
+                // 🔥 DEBUG: Log TOÀN BỘ response
+                console.log('========== FULL RESPONSE DATA ==========');
+                console.log('Response Object:', data);
+                console.log('All Keys:', Object.keys(data));
+                console.log('========================================');
+                
                 if (data.success) {
                     currentOrderId = data.order_id;
                     
-                    // Log thông tin
+                    // Log thông tin chi tiết
                     console.log('✅ PayOS Payment Created');
                     console.log('Order ID:', data.order_id);
                     console.log('Payment Link ID:', data.payment_link_id);
                     console.log('Amount:', data.amount);
-                    console.log('QR Code:', data.qr_code ? `Present (${data.qr_code.length} chars)` : 'MISSING');
-                    console.log('Checkout URL:', data.checkout_url);
+                    
+                    // 🔥 DEBUG QR CODE field
+                    console.log('--- QR CODE DEBUG ---');
+                    console.log('data.qr_code exists:', 'qr_code' in data);
+                    console.log('data.qr_code value:', data.qr_code);
+                    console.log('data.qr_code type:', typeof data.qr_code);
+                    if (data.qr_code) {
+                        console.log('data.qr_code length:', data.qr_code.length);
+                        console.log('data.qr_code first 50 chars:', data.qr_code.substring(0, 50));
+                    }
+                    
+                    // 🔥 DEBUG CHECKOUT URL field
+                    console.log('--- CHECKOUT URL DEBUG ---');
+                    console.log('data.checkout_url exists:', 'checkout_url' in data);
+                    console.log('data.checkout_url value:', data.checkout_url);
+                    console.log('data.checkout_url type:', typeof data.checkout_url);
+                    console.log('---------------------');
                     
                     // 🔥 CHECK QR CODE
                     if (data.qr_code && data.qr_code.length > 10) {

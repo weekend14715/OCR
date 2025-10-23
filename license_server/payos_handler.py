@@ -164,16 +164,32 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             checkout_url = checkout_url or ''
             qr_code = qr_code or ''
             
+            # 🔥 DEBUG: Log chi tiết PayOS API response
+            print("========== PAYOS API RESPONSE DEBUG ==========")
+            print(f"Response type: {type(response)}")
+            print(f"Response dir: {dir(response)}")
+            if hasattr(response, '__dict__'):
+                print(f"Response __dict__: {response.__dict__}")
+            if hasattr(response, 'data'):
+                print(f"Response.data type: {type(response.data)}")
+                print(f"Response.data: {response.data}")
+            if isinstance(response, dict):
+                print(f"Response as dict: {response}")
+            print("==============================================")
+            
             print(f"[PayOS]    Payment ID: {payment_link_id}")
             print(f"[PayOS]    Checkout URL: {checkout_url[:80]}..." if len(checkout_url) > 80 else f"[PayOS]    Checkout URL: {checkout_url}")
             print(f"[PayOS]    QR Code: {'✅ Present' if qr_code else '❌ MISSING'} (length: {len(qr_code) if qr_code else 0})")
+            
+            if qr_code:
+                print(f"[PayOS]    QR Code first 100 chars: {qr_code[:100]}")
             
             if not checkout_url:
                 print(f"[PayOS] ⚠️ WARNING: No checkout URL in response!")
                 print(f"[PayOS] Full response: {response}")
                 return {'success': False, 'error': 'No checkout URL in PayOS response'}
             
-            return {
+            result = {
                 'success': True,
                 'checkout_url': checkout_url,
                 'qr_code': qr_code or '',  # Empty string if None
@@ -181,6 +197,9 @@ def create_payment_link(order_id, amount, description, customer_email="", return
                 'amount': int(amount),
                 'payment_link_id': payment_link_id
             }
+            
+            print(f"[PayOS] Returning result keys: {list(result.keys())}")
+            return result
         else:
             print(f"[PayOS] ❌ No response from PayOS!")
             return {'success': False, 'error': 'No response from PayOS'}
