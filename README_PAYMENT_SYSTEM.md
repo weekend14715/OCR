@@ -386,8 +386,7 @@ FROM orders;
 
 ## 📞 Support
 
-- **Email:** support@ocrvietnamese.com
-- **Phone:** 0123 456 789
+- **Email:** ocrtool.system@gmail.com
 - **Docs:** See `.md` files in project
 
 ---

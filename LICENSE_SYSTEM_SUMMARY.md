@@ -401,5 +401,5 @@ Hệ thống license đã hoàn thành với đầy đủ tính năng:
 **Created:** 2025-01-21  
 **Version:** 1.0.0  
 **Author:** AI Assistant  
-**Contact:** support@ocrvietnamese.com
+**Contact:** ocrtool.system@gmail.com
 

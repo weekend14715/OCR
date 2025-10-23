@@ -355,7 +355,7 @@ Mở `license_server/templates/index.html` và sửa:
 <div class="plan-price">99,000₫</div>
 
 <!-- Email liên hệ -->
-<p>Email: <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a></p>
+<p>Email: <a href="mailto:ocrtool.system@gmail.com">ocrtool.system@gmail.com</a></p>
 ```
 
 ### Đổi màu sắc
@@ -440,8 +440,7 @@ print(response.json())
 
 ## 📞 Support
 
-- **Email**: support@ocrvietnamese.com
-- **Phone**: 0123 456 789
+- **Email**: ocrtool.system@gmail.com
 - **GitHub**: [Your Repo]
 
 ---

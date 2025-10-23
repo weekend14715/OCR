@@ -345,10 +345,9 @@
         </div>
 
         <div class="contact-section">
-            <h2>📞 Liên Hệ & Hỗ Trợ</h2>
+            <h2>📧 Liên Hệ & Hỗ Trợ</h2>
             <div class="contact-info">
-                <p>Email: <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a></p>
-                <p>Hotline: <a href="tel:0123456789">0123 456 789</a></p>
+                <p>Email: <a href="mailto:ocrtool.system@gmail.com" style="font-size: 1.3em;">ocrtool.system@gmail.com</a></p>
                 <p>Giờ làm việc: 8:00 - 22:00 hàng ngày</p>
             </div>
         </div>
@@ -397,14 +396,14 @@
                         <div><strong>💰 Số tiền:</strong> <span id="transferAmount" style="font-size: 1.3em; color: #e74c3c; font-weight: bold;">100,000₫</span></div>
                         <div><strong>✉️ Nội dung CK:</strong> <span id="transferContent" style="font-size: 1.1em; color: #667eea; font-weight: bold;">EMAIL</span></div>
                     </div>
-                </div>
-                
+            </div>
+            
                 <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107;">
                     <p style="margin: 0; color: #856404; font-size: 0.95em;">
                         ⚠️ <strong>LƯU Ý:</strong> Vui lòng ghi <strong>CHÍNH XÁC email của bạn</strong> vào nội dung chuyển khoản để hệ thống tự động gửi License Key!
                     </p>
-                </div>
-                
+            </div>
+            
                 <div style="margin-top: 15px; padding: 12px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
                     <p style="margin: 0; color: #155724; font-size: 0.95em;">
                         ✅ <strong>Sau khi chuyển khoản:</strong> License Key sẽ được gửi tự động về email trong vòng <strong>1-2 phút</strong>!
@@ -424,7 +423,7 @@
             
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
                 <p style="font-size: 0.9em; color: #666;"><strong>Cần hỗ trợ?</strong></p>
-                <p style="font-size: 0.9em;">📧 <a href="mailto:support@ocrvietnamese.com">support@ocrvietnamese.com</a> | 📱 0123 456 789</p>
+                <p style="font-size: 0.9em;">📧 Email: <a href="mailto:ocrtool.system@gmail.com">ocrtool.system@gmail.com</a></p>
             </div>
             
             <button class="close-button" onclick="closeModal()" style="margin-top: 15px; background: #95a5a6;">Đóng</button>
@@ -480,7 +479,7 @@
             
             // Show loading
             const btn = document.getElementById('createOrderBtn');
-            btn.disabled = true;
+                btn.disabled = true;
             btn.innerText = '⏳ Đang tạo đơn hàng...';
             
             try {
@@ -557,12 +556,12 @@
                     }
                 } else {
                     alert('❌ Lỗi: ' + (data.error || 'Không thể tạo đơn hàng'));
-                    btn.disabled = false;
+                        btn.disabled = false;
                     btn.innerText = '🚀 Tạo Đơn Hàng & Xem Thông Tin CK';
                 }
             } catch (error) {
                 alert('❌ Lỗi kết nối: ' + error.message);
-                btn.disabled = false;
+                    btn.disabled = false;
                 btn.innerText = '🚀 Tạo Đơn Hàng & Xem Thông Tin CK';
             }
         }

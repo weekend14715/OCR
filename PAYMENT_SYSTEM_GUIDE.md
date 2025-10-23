@@ -633,8 +633,7 @@ SELECT * FROM validation_logs ORDER BY timestamp DESC LIMIT 10;
 
 ### Support
 
-- Email: support@ocrvietnamese.com
-- Phone: 0123 456 789
+- Email: ocrtool.system@gmail.com
 - GitHub Issues: your-repo/issues
 
 ---

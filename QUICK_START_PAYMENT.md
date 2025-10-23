@@ -211,7 +211,7 @@ GROUP BY plan_type;
 - `PAYMENT_SYSTEM_SUMMARY.md` - Overview
 - `GITHUB_PAGES_DEPLOY.md` - Deployment
 
-**Email:** support@ocrvietnamese.com
+**Email:** ocrtool.system@gmail.com
 
 ---
 

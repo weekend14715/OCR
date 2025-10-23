@@ -575,8 +575,7 @@ SELECT * FROM licenses WHERE order_id = 'ORD...';
 ## 📞 Support
 
 Nếu cần hỗ trợ triển khai:
-- Email: support@ocrvietnamese.com
-- Phone: 0123 456 789
+- Email: ocrtool.system@gmail.com
 
 ---
 

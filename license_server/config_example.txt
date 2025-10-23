@@ -14,8 +14,7 @@ PORT = 5000
 
 # Business Information (update in index.html)
 BUSINESS_NAME = "Vietnamese OCR Tool"
-BUSINESS_EMAIL = "support@ocrvietnamese.com"
-BUSINESS_PHONE = "0123456789"
+BUSINESS_EMAIL = "ocrtool.system@gmail.com"  # Email hỗ trợ chính
 
 # Pricing (update in index.html)
 MONTHLY_PRICE = "99,000₫"
