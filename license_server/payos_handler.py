@@ -91,7 +91,8 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         
         print(f"[PayOS] Creating payment link: Order {order_code}, Amount {amount:,} VND")
         
-        response = payos_client.createPaymentLink(payment_data)
+        # PayOS v1.0.0 new API
+        response = payos_client.payment_requests.create(payment_data)
         
         if response:
             print(f"[PayOS] ✅ Payment link created successfully!")
