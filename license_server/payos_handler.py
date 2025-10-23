@@ -12,6 +12,8 @@ import traceback
 import time
 import random
 from flask import Blueprint, request, jsonify
+from collections import defaultdict
+from threading import Lock
 
 # ============================================================================
 # PayOS Configuration
@@ -21,6 +23,18 @@ PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
 PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 payos_client = None
+
+# ============================================================================
+# Anti-Spam / Rate Limiting
+# ============================================================================
+# Track webhook requests per IP to prevent spam attacks
+webhook_rate_limit = defaultdict(list)  # {ip: [timestamp1, timestamp2, ...]}
+rate_limit_lock = Lock()
+
+# Rate limit settings
+MAX_REQUESTS_PER_MINUTE = 10  # Allow max 10 webhook requests per minute per IP
+MAX_REQUESTS_PER_HOUR = 100   # Allow max 100 webhook requests per hour per IP
+RATE_LIMIT_WINDOW = 60        # 1 minute window
 
 def generate_unique_order_id():
     """
@@ -33,6 +47,82 @@ def generate_unique_order_id():
     order_id = int(f"{timestamp}{random_suffix}")
     print(f"[PayOS] Generated order ID: {order_id}")
     return order_id
+
+
+def check_rate_limit(ip_address):
+    """
+    Check if IP address has exceeded rate limit (anti-spam)
+    
+    Args:
+        ip_address: IP address of the request
+    
+    Returns:
+        (bool, str): (is_allowed, error_message)
+    """
+    with rate_limit_lock:
+        current_time = time.time()
+        
+        # Clean up old entries (older than 1 hour)
+        webhook_rate_limit[ip_address] = [
+            timestamp for timestamp in webhook_rate_limit[ip_address]
+            if current_time - timestamp < 3600  # Keep last hour
+        ]
+        
+        # Get recent requests
+        recent_requests = webhook_rate_limit[ip_address]
+        requests_last_minute = sum(1 for t in recent_requests if current_time - t < 60)
+        requests_last_hour = len(recent_requests)
+        
+        # Check rate limits
+        if requests_last_minute >= MAX_REQUESTS_PER_MINUTE:
+            return False, f"Rate limit exceeded: {requests_last_minute} requests in last minute (max {MAX_REQUESTS_PER_MINUTE})"
+        
+        if requests_last_hour >= MAX_REQUESTS_PER_HOUR:
+            return False, f"Rate limit exceeded: {requests_last_hour} requests in last hour (max {MAX_REQUESTS_PER_HOUR})"
+        
+        # Add current request
+        webhook_rate_limit[ip_address].append(current_time)
+        
+        return True, ""
+
+
+def verify_webhook_signature(webhook_data, signature):
+    """
+    Verify PayOS webhook signature to prevent spam/fake webhooks
+    
+    PayOS uses HMAC-SHA256 with CHECKSUM_KEY
+    
+    Args:
+        webhook_data: Raw JSON string from webhook body
+        signature: Signature from 'x-signature' or 'webhook-signature' header
+    
+    Returns:
+        bool: True if signature is valid
+    """
+    if not signature or not PAYOS_CHECKSUM_KEY:
+        print("[WEBHOOK-VERIFY] ⚠️ Missing signature or checksum key")
+        return False
+    
+    try:
+        # Calculate HMAC-SHA256
+        calculated_signature = hmac.new(
+            PAYOS_CHECKSUM_KEY.encode('utf-8'),
+            webhook_data.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Compare signatures (constant-time comparison to prevent timing attacks)
+        is_valid = hmac.compare_digest(calculated_signature, signature)
+        
+        print(f"[WEBHOOK-VERIFY] Signature valid: {is_valid}")
+        if not is_valid:
+            print(f"[WEBHOOK-VERIFY] Expected: {calculated_signature[:20]}...")
+            print(f"[WEBHOOK-VERIFY] Received: {signature[:20]}...")
+        
+        return is_valid
+    except Exception as e:
+        print(f"[WEBHOOK-VERIFY] ❌ Verification error: {e}")
+        return False
 
 def init_payos():
     """Initialize PayOS client (v1.0.0)"""
@@ -256,6 +346,24 @@ def webhook():
     print(f"[WEBHOOK] Headers: {dict(request.headers)}")
     
     # ========================================================================
+    # 🛡️ ANTI-SPAM: Check rate limit for this IP
+    # ========================================================================
+    client_ip = request.remote_addr or request.headers.get('X-Forwarded-For', 'unknown').split(',')[0].strip()
+    
+    # Skip rate limit for GET/OPTIONS (verification requests)
+    if request.method == 'POST':
+        is_allowed, error_msg = check_rate_limit(client_ip)
+        if not is_allowed:
+            print(f"[WEBHOOK] 🚫 RATE LIMIT EXCEEDED for IP {client_ip}")
+            print(f"[WEBHOOK] 🚫 {error_msg}")
+            return jsonify({
+                'code': '99',
+                'desc': 'Rate limit exceeded',
+                'success': False,
+                'error': error_msg
+            }), 429  # 429 Too Many Requests
+    
+    # ========================================================================
     # Handle GET - PayOS verification test
     # ========================================================================
     if request.method == 'GET':
@@ -296,6 +404,36 @@ def webhook():
                 print(f"[WEBHOOK] Body: {raw_body}")
             else:
                 print(f"[WEBHOOK] Body (first 500): {raw_body[:500]}...")
+            
+            # ================================================================
+            # 🔒 SECURITY: Verify webhook signature to prevent spam/fake requests
+            # ================================================================
+            signature = request.headers.get('x-signature') or request.headers.get('webhook-signature') or request.headers.get('Webhook-Signature')
+            
+            if signature:
+                print(f"[WEBHOOK] 🔐 Verifying signature: {signature[:20]}...")
+                if not verify_webhook_signature(raw_body, signature):
+                    print("[WEBHOOK] ❌ INVALID SIGNATURE - Rejecting webhook (possible spam/hack attempt)")
+                    return jsonify({
+                        'code': '99',
+                        'desc': 'Invalid signature',
+                        'success': False,
+                        'error': 'Webhook signature verification failed'
+                    }), 403  # 403 Forbidden
+            else:
+                # ⚠️ WARNING: No signature provided
+                # In production, you should REJECT requests without signature
+                # For now, we log a warning but allow it (for backward compatibility)
+                print("[WEBHOOK] ⚠️ WARNING: No signature header found!")
+                print("[WEBHOOK] ⚠️ This webhook is vulnerable to spam attacks!")
+                print("[WEBHOOK] ⚠️ Expected header: 'x-signature' or 'webhook-signature'")
+                # TODO: Uncomment this in production after PayOS confirms signature header name
+                # return jsonify({
+                #     'code': '99',
+                #     'desc': 'Missing signature',
+                #     'success': False,
+                #     'error': 'Webhook signature required'
+                # }), 401  # 401 Unauthorized
             
             # Parse JSON (force=True to handle incorrect Content-Type)
             try:
