@@ -1,13 +1,15 @@
 """
-PayOS Payment Handler
+PayOS Payment Handler - Flask Blueprint
 Xử lý tạo QR code động và webhook từ PayOS
 """
 
 import os
 import hashlib
 import hmac
+import sqlite3
+import datetime
+from flask import Blueprint, request, jsonify
 from payos import PayOS
-from datetime import datetime
 
 # Khởi tạo PayOS client
 PAYOS_CLIENT_ID = os.getenv('PAYOS_CLIENT_ID', '')
@@ -180,4 +182,144 @@ def cancel_payment(order_id, reason=""):
 
 # Khởi tạo khi import module
 PAYOS_ENABLED = init_payos()
+
+# ==============================================================================
+# FLASK BLUEPRINT - PayOS Endpoints
+# ==============================================================================
+
+# Create Flask blueprint
+app = Blueprint('payos', __name__)
+
+# Database path
+DATABASE = 'licenses.db'
+
+
+@app.route('/webhook', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
+def webhook():
+    """
+    PayOS Webhook Handler
+    Nhận thông báo thanh toán từ PayOS và tự động tạo license
+    
+    Docs: https://payos.vn/docs/tich-hop-webhook/
+    """
+    # Handle preflight/test requests
+    if request.method in ['GET', 'HEAD', 'OPTIONS']:
+        response = jsonify({
+            'status': 'webhook_ready',
+            'service': 'payos',
+            'version': '2.0',
+            'endpoint': '/payos/webhook'
+        })
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-signature'
+        return response, 200
+    
+    try:
+        # Get webhook data
+        data = request.get_json()
+        
+        # Empty request → test ping
+        if not data:
+            print("[WEBHOOK] Received empty test ping")
+            return jsonify({'status': 'ok', 'message': 'Webhook ready'}), 200
+        
+        print(f"[WEBHOOK] Received PayOS webhook")
+        print(f"[WEBHOOK] Data: {data}")
+        
+        # Verify signature (optional - tùy PayOS config)
+        signature = data.get('signature')
+        if signature:
+            print(f"[WEBHOOK] Signature: {signature[:20]}...")
+        
+        # Parse payment info
+        payment_data = data.get('data', {})
+        code = data.get('code')
+        success = data.get('success', False)
+        desc = data.get('desc', '')
+        
+        # Check payment success
+        if not success and code != '00':
+            print(f"[WEBHOOK] Payment failed: code={code}, desc={desc}")
+            return jsonify({'error': 'Payment not successful'}), 400
+        
+        order_code = payment_data.get('orderCode')
+        amount = int(payment_data.get('amount', 0))
+        transaction_ref = payment_data.get('reference', '')
+        description = payment_data.get('description', '')
+        
+        print(f"[WEBHOOK] Payment details:")
+        print(f"[WEBHOOK]   Order: {order_code}")
+        print(f"[WEBHOOK]   Amount: {amount:,} VND")
+        print(f"[WEBHOOK]   Reference: {transaction_ref}")
+        
+        if not order_code:
+            print(f"[ERROR] Missing order code")
+            return jsonify({'error': 'No order code'}), 400
+        
+        # Find order in database
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT order_id, customer_email, plan_type, payment_status 
+            FROM orders 
+            WHERE order_id = ?
+        ''', (str(order_code),))
+        
+        order = c.fetchone()
+        
+        if not order:
+            print(f"[ERROR] Order not found: {order_code}")
+            conn.close()
+            return jsonify({'error': 'Order not found'}), 404
+        
+        order_id, customer_email, plan_type, payment_status = order
+        
+        # Check if already processed
+        if payment_status == 'completed':
+            print(f"[WEBHOOK] Order already completed: {order_id}")
+            conn.close()
+            return jsonify({'success': True, 'message': 'Already processed'}), 200
+        
+        conn.close()
+        
+        # Generate license key
+        from app import auto_generate_license
+        license_key = auto_generate_license(order_id, plan_type, customer_email, transaction_ref)
+        
+        if license_key:
+            print(f"[WEBHOOK] Successfully processed payment")
+            print(f"[WEBHOOK]   License: {license_key}")
+            print(f"[WEBHOOK]   Email: {customer_email}")
+            
+            return jsonify({
+                'success': True,
+                'order_id': order_id,
+                'license_key': license_key
+            }), 200
+        else:
+            print(f"[ERROR] Failed to generate license")
+            return jsonify({'error': 'Failed to generate license'}), 500
+        
+    except Exception as e:
+        print(f"[ERROR] Webhook error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'PayOS Handler',
+        'timestamp': datetime.datetime.now().isoformat(),
+        'payos_enabled': PAYOS_ENABLED,
+        'endpoints': [
+            '/payos/webhook',
+            '/payos/health'
+        ]
+    }), 200
 

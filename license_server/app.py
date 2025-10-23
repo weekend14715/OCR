@@ -19,10 +19,12 @@ from payment_gateway import (
 # Import PayOS payment
 try:
     from payos_handler import PAYOS_ENABLED, create_payment_link, verify_webhook_signature, get_payment_info
+    from payos_handler import app as payos_app  # Import Flask Blueprint
     if PAYOS_ENABLED:
         print("✅ PayOS Payment đã được kích hoạt!")
 except ImportError:
     PAYOS_ENABLED = False
+    payos_app = None
     print("⚠️  Warning: PayOS payment not available.")
 
 # Import email sender
@@ -35,6 +37,11 @@ except ImportError:
 
 app = Flask(__name__)
 CORS(app)
+
+# Register PayOS Blueprint
+if payos_app:
+    app.register_blueprint(payos_app, url_prefix='/payos')
+    print("✅ PayOS Blueprint registered at /payos/*")
 
 # Cấu hình
 DATABASE = 'licenses.db'
