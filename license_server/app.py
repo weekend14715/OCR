@@ -1186,8 +1186,6 @@ def create_payment_order():
         
         # 🔥 TẠO PAYOS PAYMENT LINK (CHỈ DÙNG PAYOS)
         try:
-            from payos_handler import create_payment_link
-            
             payos_result = create_payment_link(
                 order_id=order_id,
                 amount=amount,

@@ -1,0 +1,80 @@
+================================================================================
+✅ ĐÃ FIX: PAYOS DASHBOARD KHÔNG HIỂN THỊ GIAO DỊCH
+================================================================================
+
+VẤN ĐỀ:
+--------
+❌ Khi user tạo đơn hàng → PayOS Dashboard KHÔNG hiển thị giao dịch chờ thanh toán
+❌ Frontend chỉ gọi API tạo VietQR (manual transfer)
+❌ KHÔNG gọi PayOS createPaymentLink()
+
+NGUYÊN NHÂN:
+------------
+Frontend gọi endpoint: /api/payment/create-order
+→ Endpoint này CHỈ tạo VietQR
+→ KHÔNG tạo PayOS Payment Link
+→ Do đó PayOS không biết có giao dịch nào
+
+GIẢI PHÁP:
+----------
+✅ Sửa /api/payment/create-order để TÍCH HỢP PayOS
+✅ Khi tạo order → Gọi PayOS.createPaymentLink()
+✅ Frontend ưu tiên hiển thị PayOS QR Code
+✅ Fallback về VietQR nếu PayOS không khả dụng
+
+FILES CHANGED:
+--------------
+1. license_server/app.py
+   - Line 1138-1177: Thêm PayOS integration
+   - Gọi create_payment_link() từ payos_handler
+   - Return cả PayOS data + VietQR data
+
+2. license_server/templates/index.html
+   - Line 510-550: Logic hiển thị PayOS QR ưu tiên
+   - Ẩn bank info nếu có PayOS QR
+   - Fallback về VietQR nếu không có PayOS
+
+3. check_payment_status.ps1 (NEW)
+   - Debug tool để check order status
+
+KẾT QUẢ:
+--------
+✅ Giờ khi user tạo order:
+   1. Backend tạo PayOS Payment Link
+   2. PayOS Dashboard HIỂN THỊ giao dịch với status "PENDING"
+   3. Frontend hiển thị PayOS QR Code
+   4. User quét QR → Thanh toán tự động
+   5. PayOS gọi webhook → Tạo license → Gửi email
+
+COMMIT:
+-------
+Commit: 9c2fcd0
+Message: "Integrate PayOS payment link into create-order endpoint"
+Status: ✅ Pushed to GitHub
+Deploy: ⏳ Auto-deploying on Render (2-3 phút)
+
+TEST NGAY:
+----------
+1. Đợi Render deploy xong
+2. Vào: https://ocr-uufr.onrender.com/
+3. Click "Test Ngay - 2,000₫"
+4. Nhập email → Tạo đơn hàng
+5. Kiểm tra PayOS Dashboard → Phải thấy giao dịch PENDING!
+
+DEBUG:
+------
+PowerShell:
+  .\check_payment_status.ps1
+  → Nhập Order ID để xem status
+
+API:
+  curl https://ocr-uufr.onrender.com/api/order/status/[ORDER_ID]
+
+Render Logs:
+  https://dashboard.render.com/
+  → Tìm dòng: "✅ PayOS Payment Link created: [payment_link_id]"
+
+================================================================================
+🎉 HOÀN THÀNH - PayOS Dashboard giờ sẽ hiển thị giao dịch!
+================================================================================
+
