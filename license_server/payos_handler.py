@@ -81,15 +81,24 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         # Ensure order_id is integer
         order_code = int(order_id)
         
+        # PayOS requires items array (mandatory in v1.0.0)
+        items = [{
+            "name": description[:25] if len(description) <= 25 else "License Key",
+            "quantity": 1,
+            "price": int(amount)
+        }]
+        
         payment_data = {
             "orderCode": order_code,
             "amount": int(amount),
             "description": description[:25],  # PayOS v1.0.0 limit: max 25 characters
+            "items": items,  # Required field
             "returnUrl": return_url or "https://ocr-uufr.onrender.com/payment/success",
             "cancelUrl": cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
         }
         
         print(f"[PayOS] Creating payment link: Order {order_code}, Amount {amount:,} VND")
+        print(f"[PayOS] Payment data: {payment_data}")
         
         # PayOS v1.0.0 new API
         response = payos_client.payment_requests.create(payment_data)
