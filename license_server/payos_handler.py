@@ -108,8 +108,8 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             "orderCode": order_code,
             "amount": int(amount),
             "description": description[:25],  # PayOS v1.0.0 limit: max 25 characters
-            "returnUrl": return_url or "https://ocr-uufr.onrender.com/payment/success",
-            "cancelUrl": cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
+            "returnUrl": return_url or f"https://ocr-uufr.onrender.com/payment/success?order_id={order_code}",
+            "cancelUrl": cancel_url or f"https://ocr-uufr.onrender.com/payment/cancel?order_id={order_code}"
         }
         
         print(f"[PayOS] Creating payment request: Order {order_code}, Amount {amount:,} VND")
