@@ -44,10 +44,18 @@ if payos_app:
     print("PayOS Blueprint registered at /payos/*")
 
 # Cấu hình
-DATABASE = 'licenses.db'
+import os
+
+# Database configuration - use persistent disk on Render, local file in dev
+PERSISTENT_DIR = '/var/data'  # Render Disk mount path
+if os.path.exists(PERSISTENT_DIR) and os.access(PERSISTENT_DIR, os.W_OK):
+    DATABASE = os.path.join(PERSISTENT_DIR, 'licenses.db')
+    print(f"[CONFIG] 💾 Using persistent storage: {DATABASE}")
+else:
+    DATABASE = 'licenses.db'
+    print(f"[CONFIG] 📁 Using local storage: {DATABASE}")
 
 # PayOS Configuration (from environment variables)
-import os
 ADMIN_API_KEY = os.getenv('ADMIN_API_KEY', 'your-secure-admin-api-key-here-change-this')  # ⚠️ Đặt trong Render Environment Variables!
 PAYOS_CLIENT_ID = os.getenv('PAYOS_CLIENT_ID', '')
 PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')

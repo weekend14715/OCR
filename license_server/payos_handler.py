@@ -229,7 +229,14 @@ PAYOS_ENABLED = init_payos()
 # ============================================================================
 
 app = Blueprint('payos', __name__)
-DATABASE = 'licenses.db'
+
+# Database configuration - use persistent disk on Render, local file in dev
+import os as _os
+PERSISTENT_DIR = '/var/data'
+if _os.path.exists(PERSISTENT_DIR) and _os.access(PERSISTENT_DIR, _os.W_OK):
+    DATABASE = _os.path.join(PERSISTENT_DIR, 'licenses.db')
+else:
+    DATABASE = 'licenses.db'
 
 
 @app.route('/webhook', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])

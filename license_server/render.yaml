@@ -69,10 +69,10 @@ services:
     # Auto-deploy settings
     autoDeploy: true  # Auto deploy khi push lên GitHub
     
-    # Disk storage cho SQLite database
+    # Disk storage cho SQLite database (persistent across deploys)
     disk:
       name: license-db
-      mountPath: /opt/render/project/src
+      mountPath: /var/data
       sizeGB: 1  # Free tier: 1GB, có thể tăng nếu trả phí
 
 # Optional: Background worker (nếu cần chạy scheduled tasks)
