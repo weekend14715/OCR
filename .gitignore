@@ -80,3 +80,8 @@ Desktop.ini
 test_payment_*.py
 payment_test.py
 
+# Code Signing Certificate (BẢO MẬT - KHÔNG ĐƯỢC COMMIT!)
+*.pfx
+cert_info.json
+OCR_CodeSigning.*
+

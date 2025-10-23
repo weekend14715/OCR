@@ -1,56 +1,172 @@
-# ⚡ QUICK START - 5 PHÚT SETUP EMAIL
+# 🚀 Quick Start - Ký số file .exe
 
-## 📋 TÓM TẮT NHANH
+## ⚡ Cách nhanh nhất (1 lệnh)
 
-Anh đã upgrade Starter plan → Giờ chỉ cần 3 bước:
-
----
-
-## 1️⃣ TẠO APP PASSWORD (2 phút)
-
-1. Bật 2FA: https://myaccount.google.com/security
-2. Tạo App Password: https://myaccount.google.com/apppasswords
-   - App: **Mail**
-   - Device: **Other** → Nhập `OCR License Server`
-   - Copy mã **16 ký tự**: `abcdwxyzabcdwxyz`
-
----
-
-## 2️⃣ CẬP NHẬT RENDER (2 phút)
-
-1. Vào: https://dashboard.render.com
-2. Chọn service **ocr-uufr** → Tab **Environment**
-3. Add variable:
-   - Key: `EMAIL_ACCOUNTS`
-   - Value:
-   ```json
-   [{"email":"ocrtool.license@gmail.com","app_password":"PASTE_MÃ_16_KÝ_TỰ_Ở_ĐÂY","daily_limit":500,"display_name":"OCR Tool License"}]
-   ```
-4. Click **Save Changes** → Chờ deploy (2 phút)
-
----
-
-## 3️⃣ TEST (1 phút)
-
-Chạy script:
 ```powershell
-powershell -ExecutionPolicy Bypass -File test_email_production.ps1
+# Tạo certificate + Build + Sign
+.\build_and_sign.ps1
 ```
 
-Hoặc test bằng curl:
-```bash
-curl -X POST https://ocr-uufr.onrender.com/api/debug/test-email \
-  -H "Content-Type: application/json" \
-  -d '{"to_email":"hoangtuan.th484@gmail.com"}'
-```
-
-→ Check inbox → Nhận email! 🎉
+**Hoàn tất!** File `.exe` đã được ký số trong `dist\OCR.exe`
 
 ---
 
-## ✅ XONG!
+## 📝 Chi tiết từng bước
 
-Giờ mỗi lần tạo license từ Admin Panel, email tự động gửi cho khách hàng!
+### **Bước 1: Tạo Certificate (Chỉ làm 1 lần)**
 
-**Chi tiết đầy đủ:** Xem file `SETUP_COMPLETE_GUIDE.md`
+```powershell
+.\create_self_signed_cert.ps1
+```
 
+**Output:**
+```
+🔐 TẠO SELF-SIGNED CERTIFICATE
+✅ Certificate đã tạo thành công!
+💾 Đã export certificate sang file: .\OCR_CodeSigning.pfx
+   Password: OCR2024!
+```
+
+**Files tạo ra:**
+- `OCR_CodeSigning.pfx` - Certificate file (⚠️ GIỮ BÍ MẬT!)
+- `cert_info.json` - Thông tin certificate
+
+---
+
+### **Bước 2: Ký file .exe**
+
+**Nếu đã có file .exe:**
+```powershell
+.\sign_exe.ps1 -ExePath "dist\OCR.exe"
+```
+
+**Nếu chưa build:**
+```powershell
+.\build_and_sign.ps1
+```
+
+**Output:**
+```
+🔐 KÝ FILE .EXE
+✅ KÝ THÀNH CÔNG!
+📋 Thông tin chữ ký:
+   Status: Valid
+   Signer: CN=OCR License System
+```
+
+---
+
+## ✅ Verify Signature
+
+```powershell
+Get-AuthenticodeSignature "dist\OCR.exe"
+```
+
+**Kết quả mong đợi:**
+```
+SignerCertificate      : CN=OCR License System
+TimeStamperCertificate : CN=DigiCert Timestamp
+Status                 : Valid
+```
+
+---
+
+## 📦 Đóng gói Release
+
+### **1. Test file .exe:**
+```powershell
+.\dist\OCR.exe
+```
+
+### **2. Tạo package:**
+```powershell
+# Tạo folder release
+mkdir release
+Copy-Item "dist\OCR.exe" "release\"
+Copy-Item "README_INSTALLATION.txt" "release\README.txt"
+
+# Zip
+Compress-Archive -Path "release\*" -DestinationPath "OCR_v1.0.0_signed.zip"
+```
+
+### **3. Upload VirusTotal:**
+1. Truy cập: https://www.virustotal.com
+2. Upload `OCR.exe`
+3. Đợi scan → Share link với users
+
+---
+
+## 🎯 User Installation
+
+Khi user download file:
+
+1. **Extract .zip**
+2. **Double-click OCR.exe**
+3. **Windows SmartScreen hiện cảnh báo:**
+   - Click **"More info"**
+   - Click **"Run anyway"**
+4. **Done!**
+
+(Chỉ cần làm 1 lần, lần sau Windows sẽ nhớ)
+
+---
+
+## ⚠️ Important Notes
+
+### **✅ Làm:**
+- ✅ Keep `OCR_CodeSigning.pfx` an toàn
+- ✅ Backup certificate file
+- ✅ Sign mọi release versions
+- ✅ Include README_INSTALLATION.txt
+
+### **❌ Không làm:**
+- ❌ Commit `.pfx` file lên Git
+- ❌ Share password `OCR2024!`
+- ❌ Release unsigned .exe
+- ❌ Thay đổi certificate khi đã phát hành
+
+---
+
+## 🔄 Workflow
+
+```
+┌─────────────────┐
+│ Write Python    │
+│ code            │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ build_and_sign  │  ← Chạy script này
+│ .ps1            │
+└────────┬────────┘
+         │
+         ├─► Build .exe (PyInstaller)
+         │
+         ├─► Sign .exe (Certificate)
+         │
+         └─► Verify signature
+                  │
+                  ▼
+         ┌─────────────────┐
+         │ dist\OCR.exe    │
+         │ (Signed ✓)      │
+         └─────────────────┘
+                  │
+                  ▼
+         ┌─────────────────┐
+         │ Package & Ship  │
+         └─────────────────┘
+```
+
+---
+
+## 📚 Tài liệu
+
+- **Chi tiết:** `SIGNING_GUIDE.md`
+- **User guide:** `README_INSTALLATION.txt`
+- **Persistent storage:** `PERSISTENT_STORAGE_SETUP.md`
+
+---
+
+**🎉 Ready to sign your .exe files!**
