@@ -21,7 +21,7 @@ PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 payos_client = None
 
 def init_payos():
-    """Initialize PayOS client"""
+    """Initialize PayOS client (v1.0.0)"""
     global payos_client
     
     if not PAYOS_CLIENT_ID or not PAYOS_API_KEY or not PAYOS_CHECKSUM_KEY:
@@ -33,16 +33,19 @@ def init_payos():
     
     try:
         from payos import PayOS
+        from payos.types import ItemData, CreatePaymentLinkRequest  # v1.0.0
+        
         payos_client = PayOS(
             client_id=PAYOS_CLIENT_ID,
             api_key=PAYOS_API_KEY,
             checksum_key=PAYOS_CHECKSUM_KEY
         )
-        print("✅ PayOS initialized successfully!")
+        print("✅ PayOS v1.0.0 initialized successfully!")
         print(f"   Client ID: {PAYOS_CLIENT_ID[:8]}...")
         return True
-    except ImportError:
-        print("❌ PayOS library not installed. Run: pip install payos")
+    except ImportError as ie:
+        print(f"❌ PayOS import error: {ie}")
+        print("   Run: pip install payos")
         return False
     except Exception as e:
         print(f"❌ Error initializing PayOS: {e}")
@@ -78,42 +81,64 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         return {'success': False, 'error': 'PayOS not initialized'}
     
     try:
+        # Import types inside function to avoid circular imports
+        from payos.types import ItemData, CreatePaymentLinkRequest
+        
         # Ensure order_id is integer
         order_code = int(order_id)
         
         # PayOS requires items array (mandatory in v1.0.0)
-        items = [{
-            "name": description[:25] if len(description) <= 25 else "License Key",
-            "quantity": 1,
-            "price": int(amount)
-        }]
+        item = ItemData(
+            name=description[:25] if len(description) <= 25 else "License Key",
+            quantity=1,
+            price=int(amount)
+        )
         
-        payment_data = {
-            "orderCode": order_code,
-            "amount": int(amount),
-            "description": description[:25],  # PayOS v1.0.0 limit: max 25 characters
-            "items": items,  # Required field
-            "returnUrl": return_url or "https://ocr-uufr.onrender.com/payment/success",
-            "cancelUrl": cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
-        }
+        # Create payment request with proper types
+        payment_data = CreatePaymentLinkRequest(
+            orderCode=order_code,
+            amount=int(amount),
+            description=description[:25],  # PayOS v1.0.0 limit: max 25 characters
+            items=[item],  # Required field
+            returnUrl=return_url or "https://ocr-uufr.onrender.com/payment/success",
+            cancelUrl=cancel_url or "https://ocr-uufr.onrender.com/payment/cancel"
+        )
         
         print(f"[PayOS] Creating payment link: Order {order_code}, Amount {amount:,} VND")
-        print(f"[PayOS] Payment data: {payment_data}")
+        print(f"[PayOS] Description: {description[:25]}")
         
-        # PayOS v1.0.0 new API
-        response = payos_client.payment_requests.create(payment_data)
+        # PayOS v1.0.0 API: payment_links.create()
+        response = payos_client.payment_links.create(payment_data)
         
         if response:
             print(f"[PayOS] ✅ Payment link created successfully!")
-            print(f"[PayOS]    Link ID: {response.paymentLinkId}")
+            print(f"[PayOS] Response type: {type(response)}")
+            print(f"[PayOS] Response attributes: {dir(response)}")
+            
+            # Try to extract fields (handle both dict and object)
+            if hasattr(response, 'checkoutUrl'):
+                checkout_url = response.checkoutUrl
+                qr_code = response.qrCode
+                payment_link_id = response.paymentLinkId
+            elif isinstance(response, dict):
+                checkout_url = response.get('checkoutUrl', '')
+                qr_code = response.get('qrCode', '')
+                payment_link_id = response.get('paymentLinkId', '')
+            else:
+                print(f"[PayOS] ⚠️ Unknown response format: {response}")
+                return {'success': False, 'error': 'Unknown response format'}
+            
+            print(f"[PayOS]    Link ID: {payment_link_id}")
+            print(f"[PayOS]    Checkout URL: {checkout_url}")
+            print(f"[PayOS]    QR Code: {qr_code[:50] if qr_code else 'None'}...")
             
             return {
                 'success': True,
-                'checkout_url': response.checkoutUrl,
-                'qr_code': response.qrCode,
+                'checkout_url': checkout_url,
+                'qr_code': qr_code,
                 'order_id': str(order_id),
                 'amount': int(amount),
-                'payment_link_id': response.paymentLinkId
+                'payment_link_id': payment_link_id
             }
         else:
             return {'success': False, 'error': 'No response from PayOS'}
