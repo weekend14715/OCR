@@ -152,6 +152,91 @@ def index():
     """Trang chủ - Landing page bán license"""
     return render_template('index.html')
 
+
+@app.route('/payment/success')
+def payment_success():
+    """Trang hiển thị license key sau khi thanh toán thành công"""
+    return render_template('payment_success.html')
+
+
+@app.route('/api/payment/check-order', methods=['GET'])
+def check_order():
+    """
+    Kiểm tra thông tin đơn hàng và license key
+    GET: /api/payment/check-order?order_id=123456
+    
+    Returns:
+        {
+            "success": true/false,
+            "order_id": "123456",
+            "email": "user@example.com",
+            "plan_type": "lifetime",
+            "payment_status": "completed/pending",
+            "license_key": "xxx-xxx-xxx" (nếu đã thanh toán)
+        }
+    """
+    try:
+        order_id = request.args.get('order_id', '').strip()
+        
+        if not order_id:
+            return jsonify({
+                'success': False,
+                'error': 'Missing order_id parameter'
+            }), 400
+        
+        # Query database
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT o.order_id, o.customer_email, o.plan_type, o.payment_status, 
+                   l.license_key, l.expiry_date, l.status
+            FROM orders o
+            LEFT JOIN licenses l ON o.order_id = l.order_id
+            WHERE o.order_id = ?
+        ''', (str(order_id),))
+        
+        result = c.fetchone()
+        conn.close()
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+        
+        order_id, email, plan_type, payment_status, license_key, expiry_date, license_status = result
+        
+        # Check if payment completed and license generated
+        if payment_status == 'completed' and license_key:
+            return jsonify({
+                'success': True,
+                'order_id': order_id,
+                'email': email,
+                'plan_type': plan_type,
+                'payment_status': payment_status,
+                'license_key': license_key,
+                'expiry_date': expiry_date,
+                'license_status': license_status
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'order_id': order_id,
+                'email': email,
+                'plan_type': plan_type,
+                'payment_status': payment_status,
+                'error': 'Payment not completed yet' if payment_status == 'pending' else 'License not generated'
+            }), 200
+            
+    except Exception as e:
+        print(f"❌ Error checking order: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/health')
 def health_check():
     """Health check endpoint for Render"""
@@ -1191,8 +1276,8 @@ def create_payment_order():
                 amount=amount,
                 description=f"Mua license OCR - {plan_type} - {customer_email}",
                 customer_email=customer_email,
-                return_url=f"https://ocr-uufr.onrender.com/success?order_id={order_id}",
-                cancel_url="https://ocr-uufr.onrender.com/failed"
+                return_url=f"https://ocr-uufr.onrender.com/payment/success?order_id={order_id}",
+                cancel_url="https://ocr-uufr.onrender.com/?cancel=true"
             )
             
             if not payos_result.get('success'):
