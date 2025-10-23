@@ -59,12 +59,6 @@ ZALOPAY_CONFIG = {
 # Pricing Plans (VNĐ)
 # ===================================
 PRICING = {
-    'test': {
-        'name': 'Test Plan (2,000đ)',
-        'price': 2000,
-        'duration_days': 1,  # 1 ngày để test
-        'plan_type': 'test'
-    },
     'monthly': {
         'name': 'Monthly Plan',
         'price': 99000,
@@ -79,7 +73,7 @@ PRICING = {
     },
     'lifetime': {
         'name': 'Lifetime Plan',
-        'price': 1999000,
+        'price': 100000,  # Giá ưu đãi đặc biệt
         'duration_days': 36500,  # 100 years
         'plan_type': 'lifetime'
     }

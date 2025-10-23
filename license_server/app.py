@@ -179,6 +179,12 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/guide')
+def guide():
+    """Trang hướng dẫn sử dụng"""
+    return render_template('guide.html')
+
+
 @app.route('/payment/success')
 def payment_success_page():
     """Trang hiển thị license key sau khi thanh toán thành công"""
