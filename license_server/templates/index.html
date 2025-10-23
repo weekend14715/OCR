@@ -375,7 +375,8 @@
                 
                 <!-- VietQR Code -->
                 <div id="qrCodeContainer" style="text-align: center; margin-bottom: 20px;">
-                    <img id="qrCodeImage" src="" alt="VietQR Code" style="max-width: 300px; width: 100%; border: 3px solid #667eea; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <!-- QR Code will be generated here by QRCode.js -->
+                    <div id="qrCodeDiv" style="display: inline-block; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                     <p style="margin-top: 10px; color: #667eea; font-weight: bold; font-size: 1.1em;">📱 Quét mã QR để thanh toán nhanh</p>
                 </div>
                 
@@ -540,7 +541,32 @@
                     if (data.qr_code && data.qr_code.length > 10) {
                         // Có QR Code → Hiển thị trên trang
                         console.log('→ Displaying QR code on page');
-                        document.getElementById('qrCodeImage').src = data.qr_code;
+                        
+                        // Clear previous QR code if any
+                        const qrDiv = document.getElementById('qrCodeDiv');
+                        qrDiv.innerHTML = '';
+                        
+                        // Generate QR code from text using QRCode.js
+                        try {
+                            new QRCode(qrDiv, {
+                                text: data.qr_code,
+                                width: 280,
+                                height: 280,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.H
+                            });
+                            console.log('✅ QR Code generated successfully');
+                        } catch (error) {
+                            console.error('❌ Error generating QR code:', error);
+                            // Fallback to redirect if QR generation fails
+                            if (data.checkout_url) {
+                                alert('⚠️ Không thể tạo mã QR!\n\n🔄 Đang chuyển tới trang thanh toán PayOS...');
+                                window.location.href = data.checkout_url;
+                                return;
+                            }
+                        }
+                        
                         document.getElementById('qrCodeContainer').style.display = 'block';
                         document.getElementById('bankInfo').style.display = 'none';
                         
@@ -615,6 +641,9 @@
             }
         }
     </script>
+    
+    <!-- QRCode.js Library for generating QR codes from text -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </body>
 </html>
 
