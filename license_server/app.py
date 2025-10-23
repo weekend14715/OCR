@@ -154,7 +154,7 @@ def index():
 
 
 @app.route('/payment/success')
-def payment_success():
+def payment_success_page():
     """Trang hiển thị license key sau khi thanh toán thành công"""
     return render_template('payment_success.html')
 
