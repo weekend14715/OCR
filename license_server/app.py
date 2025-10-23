@@ -1099,6 +1099,48 @@ def debug_payos_status():
     }), 200
 
 
+@app.route('/api/debug/test-payment', methods=['POST'])
+def debug_test_payment():
+    """Test PayOS payment creation with detailed error logging"""
+    try:
+        data = request.get_json() or {}
+        test_email = data.get('email', 'test@example.com')
+        test_amount = int(data.get('amount', 10000))  # 10k VND để test
+        
+        # Check PayOS enabled
+        if not PAYOS_ENABLED:
+            return jsonify({
+                'error': 'PayOS not enabled',
+                'details': 'Check environment variables'
+            }), 503
+        
+        # Try to create payment
+        from payos_handler import create_payment_link
+        
+        test_order_id = int(datetime.datetime.now().timestamp() * 1000)
+        
+        result = create_payment_link(
+            order_id=test_order_id,
+            amount=test_amount,
+            description=f"TEST - {test_email}",
+            customer_email=test_email,
+            return_url="https://ocr-uufr.onrender.com/success",
+            cancel_url="https://ocr-uufr.onrender.com/failed"
+        )
+        
+        return jsonify({
+            'test_order_id': test_order_id,
+            'payos_result': result
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+
 @app.route('/api/payment/create-order', methods=['POST'])
 def create_payment_order():
     """
