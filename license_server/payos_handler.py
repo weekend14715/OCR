@@ -9,6 +9,8 @@ import hmac
 import sqlite3
 import datetime
 import traceback
+import time
+import random
 from flask import Blueprint, request, jsonify
 
 # ============================================================================
@@ -19,6 +21,18 @@ PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
 PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 payos_client = None
+
+def generate_unique_order_id():
+    """
+    Generate unique order ID for PayOS
+    Format: timestamp (10 digits) + random (4 digits) = 14 digits
+    PayOS requires integer order code
+    """
+    timestamp = int(time.time())  # 10 digits
+    random_suffix = random.randint(1000, 9999)  # 4 digits
+    order_id = int(f"{timestamp}{random_suffix}")
+    print(f"[PayOS] Generated order ID: {order_id}")
+    return order_id
 
 def init_payos():
     """Initialize PayOS client (v1.0.0)"""
@@ -84,8 +98,12 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         # Import types inside function to avoid circular imports
         from payos.types import ItemData, CreatePaymentLinkRequest
         
-        # Ensure order_id is integer
-        order_code = int(order_id)
+        # Ensure order_id is integer - if not provided or invalid, generate unique one
+        try:
+            order_code = int(order_id)
+        except (ValueError, TypeError):
+            print(f"[PayOS] Invalid order_id '{order_id}', generating new unique ID...")
+            order_code = generate_unique_order_id()
         
         # PayOS requires items array (mandatory in v1.0.0)
         item = ItemData(
@@ -108,22 +126,39 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         print(f"[PayOS] Description: {description[:25]}")
         
         # PayOS v1.0.0 API: payment_links.create()
+        print(f"[PayOS] Calling payment_links.create()...")
         response = payos_client.payment_links.create(payment_data)
+        
+        print(f"[PayOS] Response received: {type(response)}")
+        print(f"[PayOS] Response attributes: {dir(response)}")
+        print(f"[PayOS] Response content: {response}")
         
         if response:
             print(f"[PayOS] ✅ Payment link created successfully!")
-            print(f"[PayOS]    Link ID: {response.paymentLinkId}")
-            print(f"[PayOS]    Checkout URL: {response.checkoutUrl}")
+            
+            # Extract fields safely
+            payment_link_id = getattr(response, 'paymentLinkId', None) or getattr(response, 'payment_link_id', 'unknown')
+            checkout_url = getattr(response, 'checkoutUrl', None) or getattr(response, 'checkout_url', '')
+            qr_code = getattr(response, 'qrCode', None) or getattr(response, 'qr_code', '')
+            
+            print(f"[PayOS]    Link ID: {payment_link_id}")
+            print(f"[PayOS]    Checkout URL: {checkout_url}")
+            print(f"[PayOS]    QR Code: {'Present' if qr_code else 'MISSING'} (length: {len(qr_code) if qr_code else 0})")
+            
+            if not checkout_url:
+                print(f"[PayOS] ⚠️ WARNING: No checkout URL in response!")
+                return {'success': False, 'error': 'No checkout URL in PayOS response'}
             
             return {
                 'success': True,
-                'checkout_url': response.checkoutUrl,
-                'qr_code': response.qrCode,
+                'checkout_url': checkout_url,
+                'qr_code': qr_code or '',  # Empty string if None
                 'order_id': str(order_id),
                 'amount': int(amount),
-                'payment_link_id': response.paymentLinkId
+                'payment_link_id': payment_link_id
             }
         else:
+            print(f"[PayOS] ❌ No response from PayOS!")
             return {'success': False, 'error': 'No response from PayOS'}
             
     except ValueError as e:
