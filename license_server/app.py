@@ -64,6 +64,19 @@ PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
 PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 # ==============================================================================
+# HELPER FUNCTIONS - TIMEZONE
+# ==============================================================================
+
+def get_vietnam_time():
+    """Lấy thời gian hiện tại theo múi giờ +7 (Việt Nam)"""
+    vietnam_tz = datetime.timezone(datetime.timedelta(hours=7))
+    return datetime.datetime.now(vietnam_tz)
+
+def get_vietnam_isoformat():
+    """Lấy thời gian hiện tại theo múi giờ +7 ở định dạng ISO"""
+    return get_vietnam_time().isoformat()
+
+# ==============================================================================
 # DATABASE SETUP
 # ==============================================================================
 
@@ -373,16 +386,16 @@ def validate_license():
         
         # Kiểm tra nếu license chưa được kích hoạt
         if not db_machine:
-            # Kích hoạt lần đầu
-            activation_date = datetime.datetime.now().isoformat()
+            # Kích hoạt lần đầu - lưu theo múi giờ +7 (Việt Nam)
+            activation_date = get_vietnam_isoformat()
             
-            # Tính expiry date dựa vào plan
+            # Tính expiry date dựa vào plan - theo múi giờ +7 (Việt Nam)
             if plan_type == 'lifetime':
                 expiry_date = None
             elif plan_type == 'yearly':
-                expiry_date = (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+                expiry_date = (get_vietnam_time() + datetime.timedelta(days=365)).isoformat()
             elif plan_type == 'monthly':
-                expiry_date = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+                expiry_date = (get_vietnam_time() + datetime.timedelta(days=30)).isoformat()
             
             c.execute('''
                 UPDATE licenses 
@@ -682,15 +695,15 @@ def admin_generate_license():
         c = conn.cursor()
         
         created_keys = []
-        created_at = datetime.datetime.now().isoformat()
+        created_at = get_vietnam_isoformat()
         
-        # Tính expiry date cho preview
+        # Tính expiry date cho preview - theo múi giờ +7 (Việt Nam)
         if plan_type == 'lifetime':
             expiry_date = None
         elif plan_type == 'yearly':
-            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+            expiry_date = (get_vietnam_time() + datetime.timedelta(days=365)).isoformat()
         elif plan_type == 'monthly':
-            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+            expiry_date = (get_vietnam_time() + datetime.timedelta(days=30)).isoformat()
         
         for _ in range(quantity):
             license_key = generate_license_key()
@@ -1288,15 +1301,15 @@ def auto_generate_license(order_id, plan_type, customer_email, transaction_ref):
         
         # Generate new license
         license_key = generate_license_key()
-        created_at = datetime.datetime.now().isoformat()
+        created_at = get_vietnam_isoformat()
         
-        # Calculate expiry date
+        # Calculate expiry date - theo múi giờ +7 (Việt Nam)
         if plan_type == 'lifetime':
             expiry_date = None
         elif plan_type == 'yearly':
-            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=365)).isoformat()
+            expiry_date = (get_vietnam_time() + datetime.timedelta(days=365)).isoformat()
         elif plan_type == 'monthly':
-            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+            expiry_date = (get_vietnam_time() + datetime.timedelta(days=30)).isoformat()
         else:
             expiry_date = None
         
@@ -1380,14 +1393,14 @@ def auto_generate_license_for_order(order_id, payment_method, transaction_id):
         
         # Generate new license key
         license_key = generate_license_key()
-        created_at = datetime.datetime.now().isoformat()
+        created_at = get_vietnam_isoformat()
         
-        # Calculate expiry date based on plan
+        # Calculate expiry date based on plan - theo múi giờ +7 (Việt Nam)
         plan_info = get_plan_info(plan_type)
         if plan_info['duration_days'] >= 36500:  # Lifetime
             expiry_date = None
         else:
-            expiry = datetime.datetime.now() + datetime.timedelta(days=plan_info['duration_days'])
+            expiry = get_vietnam_time() + datetime.timedelta(days=plan_info['duration_days'])
             expiry_date = expiry.isoformat()
         
         # Insert license
@@ -1568,9 +1581,9 @@ def create_payment_order():
                 'message': 'Payment system is not available. Please contact administrator.'
             }), 503
         
-        # Tạo order ID (số nguyên cho PayOS)
-        order_id = int(datetime.datetime.now().timestamp() * 1000)
-        created_at = datetime.datetime.now().isoformat()
+        # Tạo order ID (số nguyên cho PayOS) - theo múi giờ +7 (Việt Nam)
+        order_id = int(get_vietnam_time().timestamp() * 1000)
+        created_at = get_vietnam_isoformat()
         
         # Lưu order vào database
         conn = sqlite3.connect(DATABASE)
@@ -1683,9 +1696,9 @@ def create_payos_payment():
         if not re.match(email_pattern, customer_email):
             return jsonify({'error': 'Invalid email format'}), 400
         
-        # Tạo order
-        order_id = int(datetime.datetime.now().timestamp() * 1000)  # PayOS yêu cầu số nguyên
-        created_at = datetime.datetime.now().isoformat()
+        # Tạo order - theo múi giờ +7 (Việt Nam)
+        order_id = int(get_vietnam_time().timestamp() * 1000)  # PayOS yêu cầu số nguyên
+        created_at = get_vietnam_isoformat()
         
         # Lưu order vào DB
         conn = sqlite3.connect(DATABASE)

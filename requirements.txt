@@ -4,4 +4,5 @@ pytesseract
 pyperclip
 pystray
 numpy
-
+cryptography
+requests

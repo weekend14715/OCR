@@ -3,7 +3,7 @@ from PIL import Image, ImageGrab, ImageEnhance, ImageFilter
 import pytesseract
 import pyperclip
 import tkinter as tk
-from tkinter import font as tkFont
+from tkinter import font as tkFont, messagebox
 from threading import Thread
 import ctypes
 import time
@@ -12,6 +12,9 @@ import sys
 import os
 from pystray import MenuItem as item, Icon
 import numpy as np
+
+# Import License Manager
+from license import LicenseManager
 
 # --- CẤU HÌNH ---
 
@@ -294,31 +297,217 @@ def trigger_ocr_selection():
 # GIAO DIỆN YÊU CẦU NHẬP PHÍM TẮT
 # ==============================================================================
 
-class HotkeyPromptWindow:
-    """Tạo một cửa sổ overlay để yêu cầu người dùng nhập phím tắt."""
+class HotkeySelectorWindow:
+    """Tạo cửa sổ chọn phím tắt với các tùy chọn có sẵn."""
     def __init__(self):
         self.root = tk.Tk()
-        self.root.attributes('-fullscreen', True)
-        self.root.attributes('-alpha', 0.75)
+        self.root.title("Chọn phím tắt OCR")
         self.root.attributes('-topmost', True)
-        self.root.configure(bg='black')
-
-        prompt_font = tkFont.Font(family="Arial", size=28, weight="bold")
-        label = tk.Label(
+        self.root.geometry("500x450")
+        self.root.configure(bg="#2c3e50")
+        self.root.resizable(False, False)
+        
+        self.root.update_idletasks()
+        x = (self.root.winfo_screenwidth() // 2) - (500 // 2)
+        y = (self.root.winfo_screenheight() // 2) - (450 // 2)
+        self.root.geometry(f"500x450+{x}+{y}")
+        
+        self.selected_hotkey = None
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Thiết lập giao diện người dùng."""
+        title_font = tkFont.Font(family="Arial", size=16, weight="bold")
+        button_font = tkFont.Font(family="Arial", size=12, weight="bold")
+        desc_font = tkFont.Font(family="Arial", size=10)
+        
+        title_label = tk.Label(
             self.root,
-            text="Hãy nhấn tổ hợp phím bạn muốn dùng để quét",
-            font=prompt_font,
-            bg="black",
+            text="🎯 CHỌN PHÍM TẮT CHO OCR TOOL",
+            font=title_font,
+            bg="#2c3e50",
+            fg="#ecf0f1"
+        )
+        title_label.pack(pady=20)
+        
+        desc_label = tk.Label(
+            self.root,
+            text="Chọn một trong các tùy chọn bên dưới:",
+            font=desc_font,
+            bg="#2c3e50",
+            fg="#bdc3c7"
+        )
+        desc_label.pack(pady=(0, 20))
+        
+        button_frame = tk.Frame(self.root, bg="#2c3e50")
+        button_frame.pack(expand=True, fill="both", padx=30, pady=10)
+        
+        hotkey_options = [
+            {"key": "ctrl+q", "name": "Ctrl + Q", "desc": "Tổ hợp phím phổ biến, dễ nhớ"},
+            {"key": "alt+space", "name": "Alt + Space", "desc": "Nhanh gọn, không xung đột"},
+            {"key": "ctrl+shift+c", "name": "Ctrl + Shift + C", "desc": "Phím tắt chuyên nghiệp"}
+        ]
+        
+        for option in hotkey_options:
+            btn_frame = tk.Frame(button_frame, bg="#34495e", relief="raised", bd=2)
+            btn_frame.pack(fill="x", pady=5)
+            
+            btn = tk.Button(
+                btn_frame,
+                text=f"{option['name']}",
+                font=button_font,
+                bg="#3498db",
+                fg="white",
+                relief="flat",
+                command=lambda k=option['key']: self.select_hotkey(k)
+            )
+            btn.pack(fill="x", padx=5, pady=5)
+            
+            desc_btn = tk.Label(
+                btn_frame,
+                text=option['desc'],
+                font=desc_font,
+                bg="#34495e",
+                fg="#bdc3c7"
+            )
+            desc_btn.pack(pady=(0, 5))
+        
+        # Nút nhấn phím tùy ý
+        press_frame = tk.Frame(button_frame, bg="#9b59b6", relief="raised", bd=2)
+        press_frame.pack(fill="x", pady=(10, 5))
+        
+        press_btn = tk.Button(
+            press_frame,
+            text="⌨️ NHẤN PHÍM TÙY Ý",
+            font=button_font,
+            bg="#9b59b6",
+            fg="white",
+            relief="flat",
+            command=self.select_press_hotkey
+        )
+        press_btn.pack(fill="x", padx=5, pady=5)
+        
+        press_desc = tk.Label(
+            press_frame,
+            text="Nhấn nút rồi gõ tổ hợp phím bạn muốn",
+            font=desc_font,
+            bg="#9b59b6",
             fg="white"
         )
-        label.place(relx=0.5, rely=0.5, anchor='center')
-
-    def get_hotkey(self):
-        """Hiển thị cửa sổ, chờ người dùng nhập và trả về phím tắt."""
-        self.root.update()
-        hotkey = keyboard.read_hotkey(suppress=False)
+        press_desc.pack(pady=(0, 5))
+    
+    def select_hotkey(self, hotkey):
+        """Chọn phím tắt có sẵn."""
+        self.selected_hotkey = hotkey
         self.root.destroy()
-        return hotkey
+    
+    def select_press_hotkey(self):
+        """Chọn phím tắt bằng cách nhấn phím tùy ý."""
+        self.root.destroy()
+        press_window = PressHotkeyWindow()
+        self.selected_hotkey = press_window.get_hotkey()
+    
+    def get_hotkey(self):
+        """Hiển thị cửa sổ và trả về phím tắt được chọn."""
+        self.root.mainloop()
+        return self.selected_hotkey
+
+class PressHotkeyWindow:
+    """Cửa sổ nhấn phím tùy ý."""
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Nhấn phím tùy ý")
+        self.root.attributes('-topmost', True)
+        self.root.geometry("500x300")
+        self.root.configure(bg="#2c3e50")
+        self.root.resizable(False, False)
+        
+        self.root.update_idletasks()
+        x = (self.root.winfo_screenwidth() // 2) - (500 // 2)
+        y = (self.root.winfo_screenheight() // 2) - (300 // 2)
+        self.root.geometry(f"500x300+{x}+{y}")
+        
+        self.setup_ui()
+        self.hotkey = None
+    
+    def setup_ui(self):
+        """Thiết lập giao diện."""
+        title_font = tkFont.Font(family="Arial", size=16, weight="bold")
+        button_font = tkFont.Font(family="Arial", size=12)
+        desc_font = tkFont.Font(family="Arial", size=11)
+        
+        title_label = tk.Label(
+            self.root,
+            text="⌨️ NHẤN PHÍM TÙY Ý",
+            font=title_font,
+            bg="#2c3e50",
+            fg="#ecf0f1"
+        )
+        title_label.pack(pady=20)
+        
+        desc_label = tk.Label(
+            self.root,
+            text="Nhấn tổ hợp phím bạn muốn sử dụng:",
+            font=desc_font,
+            bg="#2c3e50",
+            fg="#bdc3c7"
+        )
+        desc_label.pack(pady=(0, 20))
+        
+        self.status_label = tk.Label(
+            self.root,
+            text="Đang chờ bạn nhấn phím...",
+            font=desc_font,
+            bg="#2c3e50",
+            fg="#f39c12"
+        )
+        self.status_label.pack(pady=10)
+        
+        button_frame = tk.Frame(self.root, bg="#2c3e50")
+        button_frame.pack(pady=20)
+        
+        cancel_btn = tk.Button(
+            button_frame,
+            text="❌ HỦY",
+            font=button_font,
+            bg="#e74c3c",
+            fg="white",
+            relief="flat",
+            command=self.cancel,
+            width=15,
+            height=2
+        )
+        cancel_btn.pack(padx=10)
+        
+        # Tự động bắt đầu lắng nghe sau khi UI đã sẵn sàng
+        self.root.after(100, self.start_listening)
+    
+    def start_listening(self):
+        """Bắt đầu lắng nghe phím tắt."""
+        self.status_label.config(text="Đang chờ bạn nhấn phím...", fg="#f39c12")
+        self.root.update()
+        
+        try:
+            hotkey = keyboard.read_hotkey(suppress=False)
+            self.hotkey = hotkey
+            self.status_label.config(text=f"Đã nhận phím tắt: {hotkey}", fg="#27ae60")
+            self.root.update()
+            self.root.after(2000, self.root.destroy)
+            
+        except Exception as e:
+            self.status_label.config(text=f"Lỗi: {str(e)}", fg="#e74c3c")
+            self.root.update()
+            self.root.after(3000, self.root.destroy)
+    
+    def get_hotkey(self):
+        """Lấy phím tắt từ người dùng."""
+        self.root.mainloop()
+        return self.hotkey
+    
+    def cancel(self):
+        """Hủy nhập phím tắt."""
+        self.hotkey = None
+        self.root.destroy()
 
 # ==============================================================================
 # PHẦN QUẢN LÝ CẤU HÌNH VÀ PHÍM TẮT
@@ -328,7 +517,7 @@ def save_hotkey(hotkey_str):
     """Lưu phím tắt vào file config.ini."""
     config = configparser.ConfigParser()
     config['Settings'] = {'hotkey': hotkey_str}
-    with open(CONFIG_FILE, 'w') as configfile:
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
     print(f"✓ Đã lưu phím tắt mới: {hotkey_str}")
 
@@ -337,22 +526,28 @@ def load_hotkey():
     if not os.path.exists(CONFIG_FILE):
         return None
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
+    config.read(CONFIG_FILE, encoding='utf-8')
     return config.get('Settings', 'hotkey', fallback=None)
 
 def prompt_for_hotkey():
-    """Sử dụng HotkeyPromptWindow để yêu cầu người dùng nhập phím tắt."""
+    """Hiển thị giao diện chọn phím tắt."""
     print("\n" + "="*55)
-    print("✨ VUI LÒNG ĐẶT TỔ HỢP PHÍM TẮT ✨")
-    print("Một cửa sổ sẽ hiện lên, hãy nhấn phím tắt của bạn.")
+    print("✨ VUI LÒNG CHỌN PHÍM TẮT ✨")
     print("="*55)
 
-    prompt_window = HotkeyPromptWindow()
-    new_hotkey = prompt_window.get_hotkey()
+    selector = HotkeySelectorWindow()
+    new_hotkey = selector.get_hotkey()
 
-    print(f"\nBạn đã chọn: {new_hotkey}")
-    save_hotkey(new_hotkey)
-    return new_hotkey
+    if new_hotkey:
+        print(f"\n✓ Bạn đã chọn: {new_hotkey}")
+        save_hotkey(new_hotkey)
+        return new_hotkey
+    else:
+        # Nếu không chọn được, dùng mặc định
+        default_hotkey = "ctrl+q"
+        print(f"\n⚠ Sử dụng phím tắt mặc định: {default_hotkey}")
+        save_hotkey(default_hotkey)
+        return default_hotkey
 
 def register_new_hotkey(new_hotkey):
     """Hủy phím tắt cũ và đăng ký phím tắt mới."""
@@ -414,6 +609,47 @@ def main():
     is_startup_run = "--startup" in sys.argv
 
     set_dpi_awareness()
+
+    # ============================================================================
+    # KIỂM TRA BẢN QUYỀN TRƯỚC KHI CHẠY APP
+    # ============================================================================
+    try:
+        license_manager = LicenseManager()
+        
+        if not license_manager.check_license():
+            print("\n" + "="*60)
+            print("❌ KHÔNG THỂ KÍCH HOẠT BẢN QUYỀN")
+            print("="*60)
+            print("Ứng dụng sẽ thoát sau 3 giây...")
+            print("="*60 + "\n")
+            
+            # Hiển thị messagebox nếu không phải startup
+            if not is_startup_run:
+                root = tk.Tk()
+                root.withdraw()
+                messagebox.showerror(
+                    "Lỗi Bản Quyền",
+                    "Không thể kích hoạt bản quyền!\n\n"
+                    "Vui lòng kiểm tra License Key và thử lại."
+                )
+                root.destroy()
+            
+            time.sleep(3)
+            sys.exit(1)
+        
+        print("\n" + "="*60)
+        print("✅ BẢN QUYỀN HỢP LỆ - Đang khởi động ứng dụng...")
+        print("="*60 + "\n")
+        
+    except Exception as e:
+        print(f"\n❌ Lỗi kiểm tra bản quyền: {e}")
+        print("Ứng dụng sẽ thoát sau 3 giây...\n")
+        time.sleep(3)
+        sys.exit(1)
+    
+    # ============================================================================
+    # KHỞI ĐỘNG ỨNG DỤNG BÌNH THƯỜNG
+    # ============================================================================
 
     if not is_startup_run:
         print("=" * 55)
