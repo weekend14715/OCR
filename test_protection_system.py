@@ -12,54 +12,54 @@ from protection_system import AdvancedProtection
 
 def test_hardware_fingerprint():
     """Test hardware fingerprint generation"""
-    print("🔍 Testing hardware fingerprint...")
+    print("[TEST] Testing hardware fingerprint...")
     
     protection = AdvancedProtection()
     fingerprint = protection._get_hardware_fingerprint()
     
-    print(f"✅ Hardware fingerprint: {fingerprint[:16]}...")
+    print(f"[OK] Hardware fingerprint: {fingerprint[:16]}...")
     print(f"   Length: {len(fingerprint)}")
     
     # Test uniqueness
     fingerprint2 = protection._get_hardware_fingerprint()
     if fingerprint == fingerprint2:
-        print("✅ Fingerprint is consistent")
+        print("[OK] Fingerprint is consistent")
     else:
-        print("❌ Fingerprint is inconsistent")
+        print("[FAIL] Fingerprint is inconsistent")
     
     return fingerprint
 
 def test_anti_debug():
     """Test anti-debugging functionality"""
-    print("\n🛡️ Testing anti-debugging...")
+    print("\n[TEST] Testing anti-debugging...")
     
     protection = AdvancedProtection()
     is_clean = protection._check_anti_debug()
     
     if is_clean:
-        print("✅ No debugger detected")
+        print("[OK] No debugger detected")
     else:
-        print("❌ Debugger detected")
+        print("[FAIL] Debugger detected")
     
     return is_clean
 
 def test_integrity_check():
     """Test application integrity checking"""
-    print("\n🔍 Testing integrity check...")
+    print("\n[TEST] Testing integrity check...")
     
     protection = AdvancedProtection()
     is_intact = protection._check_integrity()
     
     if is_intact:
-        print("✅ Application integrity verified")
+        print("[OK] Application integrity verified")
     else:
-        print("❌ Application integrity compromised")
+        print("[FAIL] Application integrity compromised")
     
     return is_intact
 
 def test_encryption():
     """Test encryption/decryption functionality"""
-    print("\n🔐 Testing encryption...")
+    print("\n[TEST] Testing encryption...")
     
     protection = AdvancedProtection()
     
@@ -68,43 +68,43 @@ def test_encryption():
     
     # Encrypt
     encrypted = protection._encrypt_data(test_data)
-    print(f"✅ Encrypted: {encrypted[:32]}...")
+    print(f"[OK] Encrypted: {encrypted[:32]}...")
     
     # Decrypt
     decrypted = protection._decrypt_data(encrypted)
-    print(f"✅ Decrypted: {decrypted}")
+    print(f"[OK] Decrypted: {decrypted}")
     
     # Verify
     if decrypted == test_data:
-        print("✅ Encryption/Decryption successful")
+        print("[OK] Encryption/Decryption successful")
         return True
     else:
-        print("❌ Encryption/Decryption failed")
+        print("[FAIL] Encryption/Decryption failed")
         return False
 
 def test_license_server_connection():
     """Test connection to license server"""
-    print("\n🌐 Testing license server connection...")
+    print("\n[TEST] Testing license server connection...")
     
     try:
         response = requests.get("http://127.0.0.1:5000/", timeout=5)
         if response.status_code == 200:
-            print("✅ License server is running")
+            print("[OK] License server is running")
             return True
         else:
-            print(f"❌ License server returned status {response.status_code}")
+            print(f"[FAIL] License server returned status {response.status_code}")
             return False
     except requests.exceptions.ConnectionError:
-        print("❌ Cannot connect to license server")
+        print("[FAIL] Cannot connect to license server")
         print("   Make sure license server is running on port 5000")
         return False
     except Exception as e:
-        print(f"❌ License server error: {e}")
+        print(f"[FAIL] License server error: {e}")
         return False
 
 def test_protection_verification():
     """Test protection verification with server"""
-    print("\n🔐 Testing protection verification...")
+    print("\n[TEST] Testing protection verification...")
     
     protection = AdvancedProtection()
     
@@ -113,20 +113,20 @@ def test_protection_verification():
         result = protection._verify_online()
         
         if result:
-            print("✅ Protection verification successful")
+            print("[OK] Protection verification successful")
             print(f"   Session token: {protection.session_token[:16]}...")
             return True
         else:
-            print("❌ Protection verification failed")
+            print("[FAIL] Protection verification failed")
             return False
             
     except Exception as e:
-        print(f"❌ Protection verification error: {e}")
+        print(f"[FAIL] Protection verification error: {e}")
         return False
 
 def test_license_validation():
     """Test license validation with protection"""
-    print("\n🎫 Testing license validation...")
+    print("\n[TEST] Testing license validation...")
     
     protection = AdvancedProtection()
     
@@ -136,51 +136,51 @@ def test_license_validation():
     try:
         result = protection.check_license_with_protection(test_license)
         
-        print(f"✅ License validation result: {result.get('valid', False)}")
+        print(f"[OK] License validation result: {result.get('valid', False)}")
         if not result.get('valid'):
             print(f"   Error: {result.get('error', 'Unknown error')}")
         
         return result.get('valid', False)
         
     except Exception as e:
-        print(f"❌ License validation error: {e}")
+        print(f"[FAIL] License validation error: {e}")
         return False
 
 def test_protection_thread():
     """Test protection thread functionality"""
-    print("\n🔄 Testing protection thread...")
+    print("\n[TEST] Testing protection thread...")
     
     protection = AdvancedProtection()
     
     try:
         # Initialize protection
         if protection.initialize_protection():
-            print("✅ Protection system initialized")
+            print("[OK] Protection system initialized")
             
             # Wait a bit to see if thread is running
             time.sleep(2)
             
             if protection.is_protected:
-                print("✅ Protection thread is running")
+                print("[OK] Protection thread is running")
                 
                 # Shutdown protection
                 protection.shutdown_protection()
-                print("✅ Protection system shutdown")
+                print("[OK] Protection system shutdown")
                 return True
             else:
-                print("❌ Protection thread not running")
+                print("[FAIL] Protection thread not running")
                 return False
         else:
-            print("❌ Failed to initialize protection system")
+            print("[FAIL] Failed to initialize protection system")
             return False
             
     except Exception as e:
-        print(f"❌ Protection thread error: {e}")
+        print(f"[FAIL] Protection thread error: {e}")
         return False
 
 def run_all_tests():
     """Chạy tất cả các test"""
-    print("🧪 Vietnamese OCR Tool - Protection System Tests")
+    print("[TEST] Vietnamese OCR Tool - Protection System Tests")
     print("=" * 60)
     
     tests = [
@@ -201,29 +201,29 @@ def run_all_tests():
             result = test_func()
             results.append((test_name, result))
         except Exception as e:
-            print(f"❌ {test_name} failed with exception: {e}")
+            print(f"[FAIL] {test_name} failed with exception: {e}")
             results.append((test_name, False))
     
     # Summary
     print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
+    print("[SUMMARY] TEST SUMMARY")
     print("=" * 60)
     
     passed = 0
     total = len(results)
     
     for test_name, result in results:
-        status = "✅ PASS" if result else "❌ FAIL"
+        status = "[PASS]" if result else "[FAIL]"
         print(f"{status} {test_name}")
         if result:
             passed += 1
     
-    print(f"\n📈 Results: {passed}/{total} tests passed")
+    print(f"\n[RESULT] Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 All tests passed! Protection system is working correctly.")
+        print("[SUCCESS] All tests passed! Protection system is working correctly.")
     else:
-        print("⚠️ Some tests failed. Please check the issues above.")
+        print("[WARNING] Some tests failed. Please check the issues above.")
     
     return passed == total
 

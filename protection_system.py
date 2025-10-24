@@ -250,7 +250,7 @@ class AdvancedProtection:
     
     def _terminate_app(self, reason):
         """Kết thúc ứng dụng khi phát hiện vi phạm"""
-        print(f"🚫 Protection violation: {reason}")
+        print(f"[VIOLATION] Protection violation: {reason}")
         print("Ứng dụng sẽ được đóng để bảo vệ bản quyền.")
         
         # Xóa session token
@@ -282,11 +282,11 @@ class AdvancedProtection:
             self.is_protected = True
             self._start_protection_thread()
             
-            print("✅ Advanced protection system activated")
+            print("[OK] Advanced protection system activated")
             return True
             
         except Exception as e:
-            print(f"❌ Protection initialization failed: {e}")
+            print(f"[FAIL] Protection initialization failed: {e}")
             return False
     
     def check_license_with_protection(self, license_key):
@@ -340,7 +340,7 @@ class AdvancedProtection:
         """Tắt hệ thống bảo vệ"""
         self.is_protected = False
         self.session_token = None
-        print("🛡️ Protection system shutdown")
+        print("[PROTECTION] Protection system shutdown")
 
 # Global protection instance
 protection_system = AdvancedProtection()

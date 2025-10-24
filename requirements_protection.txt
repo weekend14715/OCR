@@ -1,45 +1,38 @@
 # Vietnamese OCR Tool - Protection System Requirements
 # Hệ thống bảo vệ nâng cao chống sao chép
 
-# Core dependencies
+# Core dependencies (Required)
 cryptography>=41.0.0
 psutil>=5.9.0
 requests>=2.31.0
 
-# OCR and image processing
+# OCR and image processing (Required)
 Pillow>=10.0.0
 pytesseract>=0.3.10
 numpy>=1.24.0
 
-# GUI and system integration
+# GUI and system integration (Required)
 keyboard>=0.13.5
 pyperclip>=1.8.2
 pystray>=0.19.4
 
-# Build and packaging
+# Build and packaging (Required)
 pyinstaller>=5.13.0
 auto-py-to-exe>=2.40.0
 
-# Development and testing
+# Development and testing (Optional)
 pytest>=7.4.0
 pytest-cov>=4.1.0
 
-# Optional: Enhanced security
+# Enhanced security (Required)
 pycryptodome>=3.18.0
-pycryptodomex>=3.18.0
 
-# Optional: Advanced obfuscation
-pyobfuscate>=0.1.0
-pyarmor>=8.0.0
-
-# Optional: Anti-debugging
-pydbg>=0.1.0
+# Windows-specific (Required for Windows)
 pywin32>=306; sys_platform == "win32"
 
-# Optional: Network security
+# Network security (Required)
 urllib3>=2.0.0
 certifi>=2023.7.22
 
-# Optional: Performance monitoring
+# Performance monitoring (Optional)
 memory-profiler>=0.61.0
-py-spy>=0.3.14

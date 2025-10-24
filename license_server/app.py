@@ -753,6 +753,82 @@ def admin_generate_license():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/check_license', methods=['POST'])
+def check_license():
+    """
+    Kiểm tra license key
+    POST: {
+        "license_key": "LICENSE-KEY",
+        "hardware_id": "hardware-id",
+        "app_name": "VietnameseOCRTool"
+    }
+    """
+    try:
+        data = request.get_json()
+        license_key = data.get('license_key', '').strip()
+        hardware_id = data.get('hardware_id', '').strip()
+        app_name = data.get('app_name', '').strip()
+        
+        if not all([license_key, hardware_id, app_name]):
+            return jsonify({
+                'valid': False,
+                'error': 'Missing required fields'
+            }), 400
+        
+        # Kiểm tra license trong database
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT id, license_key, machine_id, status, plan_type, created_at, expiry_date
+            FROM licenses 
+            WHERE license_key = ? AND status = 'active'
+        ''', (license_key,))
+        
+        license_data = c.fetchone()
+        
+        if not license_data:
+            conn.close()
+            return jsonify({
+                'valid': False,
+                'error': 'Invalid license key'
+            }), 400
+        
+        # Kiểm tra hardware binding
+        if license_data[2] and license_data[2] != hardware_id:
+            conn.close()
+            return jsonify({
+                'valid': False,
+                'error': 'License bound to different hardware'
+            }), 400
+        
+        # Kiểm tra expiration
+        if license_data[6]:  # expiry_date
+            from datetime import datetime
+            expires_at = datetime.fromisoformat(license_data[6])
+            if datetime.now() > expires_at:
+                conn.close()
+                return jsonify({
+                    'valid': False,
+                    'error': 'License expired'
+                }), 400
+        
+        conn.close()
+        
+        return jsonify({
+            'valid': True,
+            'license_id': license_data[0],
+            'plan': license_data[4],
+            'created_at': license_data[5],
+            'expires_at': license_data[6]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'valid': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
 @app.route('/api/admin/licenses', methods=['GET'])
 @require_admin_key
 def admin_list_licenses():
