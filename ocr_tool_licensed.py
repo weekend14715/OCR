@@ -13,13 +13,16 @@ import os
 from pystray import MenuItem as item, Icon
 import numpy as np
 
-# Import license client
+# Import license client and protection system
 try:
     from license_client import LicenseManager
+    from protection_system import protection_system
     LICENSE_ENABLED = True
+    PROTECTION_ENABLED = True
 except ImportError:
     print("⚠️ License module not found. Running in trial mode.")
     LICENSE_ENABLED = False
+    PROTECTION_ENABLED = False
 
 # --- CẤU HÌNH ---
 
@@ -57,7 +60,7 @@ is_licensed = False
 # ==============================================================================
 
 def check_license():
-    """Kiểm tra license khi khởi động"""
+    """Kiểm tra license khi khởi động với bảo vệ nâng cao"""
     global license_manager, is_licensed
     
     if not LICENSE_ENABLED:
@@ -72,6 +75,13 @@ def check_license():
     if is_valid:
         print(f"✅ {message}")
         is_licensed = True
+        
+        # Khởi tạo hệ thống bảo vệ nâng cao
+        if PROTECTION_ENABLED:
+            if not protection_system.initialize_protection():
+                print("❌ Protection system failed to initialize")
+                return False
+        
         return True
     else:
         print(f"❌ {message}")
@@ -103,16 +113,21 @@ def show_license_activation_dialog():
             else:
                 continue
         
-        # Validate license
+        # Validate license với bảo vệ nâng cao
         print(f"\n⏳ Đang xác thực license: {license_key}")
-        result = license_manager.activate_license(license_key)
+        
+        if PROTECTION_ENABLED:
+            result = protection_system.check_license_with_protection(license_key)
+        else:
+            result = license_manager.activate_license(license_key)
         
         if result.get('valid'):
             messagebox.showinfo(
                 "Thành công",
                 f"✅ License đã được kích hoạt thành công!\n\n"
                 f"Gói: {result.get('plan', 'N/A').upper()}\n"
-                f"Hết hạn: {result.get('expires', 'Vĩnh viễn')}",
+                f"Hết hạn: {result.get('expires', 'Vĩnh viễn')}\n"
+                f"🛡️ Hệ thống bảo vệ đã được kích hoạt",
                 parent=root
             )
             root.destroy()

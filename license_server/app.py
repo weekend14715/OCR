@@ -12,6 +12,8 @@ import datetime
 import uuid
 from functools import wraps
 import json
+import hmac
+import time
 from payment_gateway import (
     VNPayPayment, MoMoPayment, ZaloPayPayment, VietQRPayment,
     generate_order_id, get_plan_info
@@ -470,6 +472,183 @@ def validate_license():
         return jsonify({
             'valid': False,
             'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/api/protection/verify', methods=['POST'])
+def verify_protection():
+    """
+    Xác thực hệ thống bảo vệ
+    POST: {
+        "hardware_id": "unique-hardware-id",
+        "timestamp": 1234567890,
+        "signature": "hmac-signature",
+        "app_name": "VietnameseOCRTool"
+    }
+    """
+    try:
+        data = request.get_json()
+        hardware_id = data.get('hardware_id', '').strip()
+        timestamp = data.get('timestamp', 0)
+        signature = data.get('signature', '').strip()
+        app_name = data.get('app_name', '').strip()
+        
+        if not all([hardware_id, signature, app_name]):
+            return jsonify({
+                'valid': False,
+                'error': 'Missing required fields'
+            }), 400
+        
+        # Kiểm tra timestamp (không quá 5 phút)
+        current_time = int(time.time())
+        if abs(current_time - timestamp) > 300:
+            return jsonify({
+                'valid': False,
+                'error': 'Request expired'
+            }), 400
+        
+        # Tạo server signature để verify
+        server_message = f"{hardware_id}-{timestamp}"
+        server_signature = hmac.new(
+            b'vietnamese_ocr_protection_key_2024',
+            server_message.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Verify signature
+        if not hmac.compare_digest(signature, server_signature):
+            return jsonify({
+                'valid': False,
+                'error': 'Invalid signature'
+            }), 400
+        
+        # Tạo session token
+        session_token = secrets.token_urlsafe(32)
+        
+        # Lưu session vào database
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        # Tạo bảng sessions nếu chưa có
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS protection_sessions (
+                session_token TEXT PRIMARY KEY,
+                hardware_id TEXT,
+                app_name TEXT,
+                created_at TEXT,
+                last_activity TEXT,
+                is_active INTEGER DEFAULT 1
+            )
+        ''')
+        
+        # Lưu session
+        now = datetime.datetime.now().isoformat()
+        c.execute('''
+            INSERT OR REPLACE INTO protection_sessions 
+            (session_token, hardware_id, app_name, created_at, last_activity, is_active)
+            VALUES (?, ?, ?, ?, ?, 1)
+        ''', (session_token, hardware_id, app_name, now, now))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'valid': True,
+            'session_token': session_token,
+            'expires_in': 3600  # 1 giờ
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'valid': False,
+            'error': f'Protection verification error: {str(e)}'
+        }), 500
+
+@app.route('/api/protection/check', methods=['POST'])
+def check_protection_session():
+    """
+    Kiểm tra session bảo vệ
+    POST: {
+        "session_token": "session-token",
+        "hardware_id": "hardware-id"
+    }
+    """
+    try:
+        data = request.get_json()
+        session_token = data.get('session_token', '').strip()
+        hardware_id = data.get('hardware_id', '').strip()
+        
+        if not session_token or not hardware_id:
+            return jsonify({
+                'valid': False,
+                'error': 'Missing session_token or hardware_id'
+            }), 400
+        
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        # Kiểm tra session
+        c.execute('''
+            SELECT hardware_id, created_at, last_activity, is_active
+            FROM protection_sessions 
+            WHERE session_token = ? AND is_active = 1
+        ''', (session_token,))
+        
+        result = c.fetchone()
+        
+        if not result:
+            conn.close()
+            return jsonify({
+                'valid': False,
+                'error': 'Invalid or expired session'
+            }), 200
+        
+        db_hardware_id, created_at, last_activity, is_active = result
+        
+        # Kiểm tra hardware ID
+        if db_hardware_id != hardware_id:
+            conn.close()
+            return jsonify({
+                'valid': False,
+                'error': 'Hardware ID mismatch'
+            }), 200
+        
+        # Kiểm tra session timeout (1 giờ)
+        created_dt = datetime.datetime.fromisoformat(created_at)
+        if datetime.datetime.now() - created_dt > datetime.timedelta(hours=1):
+            # Deactivate session
+            c.execute('''
+                UPDATE protection_sessions 
+                SET is_active = 0 
+                WHERE session_token = ?
+            ''', (session_token,))
+            conn.commit()
+            conn.close()
+            
+            return jsonify({
+                'valid': False,
+                'error': 'Session expired'
+            }), 200
+        
+        # Update last activity
+        now = datetime.datetime.now().isoformat()
+        c.execute('''
+            UPDATE protection_sessions 
+            SET last_activity = ? 
+            WHERE session_token = ?
+        ''', (now, session_token))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'valid': True,
+            'message': 'Session is valid'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'valid': False,
+            'error': f'Session check error: {str(e)}'
         }), 500
 
 # ==============================================================================
