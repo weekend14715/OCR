@@ -121,7 +121,7 @@ def verify_webhook_signature(webhook_data, signature):
         
         return is_valid
     except Exception as e:
-        print(f"[WEBHOOK-VERIFY] ❌ Verification error: {e}")
+        print(f"[WEBHOOK-VERIFY] [ERROR] Verification error: {e}")
         return False
 
 def init_payos():
@@ -129,10 +129,10 @@ def init_payos():
     global payos_client
     
     if not PAYOS_CLIENT_ID or not PAYOS_API_KEY or not PAYOS_CHECKSUM_KEY:
-        print("❌ PayOS credentials not configured!")
-        print(f"   CLIENT_ID: {'✓' if PAYOS_CLIENT_ID else '✗'}")
-        print(f"   API_KEY: {'✓' if PAYOS_API_KEY else '✗'}")
-        print(f"   CHECKSUM_KEY: {'✓' if PAYOS_CHECKSUM_KEY else '✗'}")
+        print("[ERROR] PayOS credentials not configured!")
+        print(f"   CLIENT_ID: {'OK' if PAYOS_CLIENT_ID else 'MISSING'}")
+        print(f"   API_KEY: {'OK' if PAYOS_API_KEY else 'MISSING'}")
+        print(f"   CHECKSUM_KEY: {'OK' if PAYOS_CHECKSUM_KEY else 'MISSING'}")
         return False
     
     try:
@@ -144,15 +144,15 @@ def init_payos():
             api_key=PAYOS_API_KEY,
             checksum_key=PAYOS_CHECKSUM_KEY
         )
-        print("✅ PayOS v1.0.0 initialized successfully!")
+        print("[SUCCESS] PayOS v1.0.0 initialized successfully!")
         print(f"   Client ID: {PAYOS_CLIENT_ID[:8]}...")
         return True
     except ImportError as ie:
-        print(f"❌ PayOS import error: {ie}")
+        print(f"[ERROR] PayOS import error: {ie}")
         print("   Run: pip install payos")
         return False
     except Exception as e:
-        print(f"❌ Error initializing PayOS: {e}")
+        print(f"[ERROR] Error initializing PayOS: {e}")
         traceback.print_exc()
         return False
 
@@ -192,7 +192,7 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             print(f"[PayOS] Invalid order_id '{order_id}', generating new unique ID...")
             order_code = generate_unique_order_id()
         
-        # ✅ ĐÚNG CÁCH: Sử dụng payment_requests.create() với dict data
+        # [SUCCESS] ĐÚNG CÁCH: Sử dụng payment_requests.create() với dict data
         # KHÔNG cần import ItemData, CreatePaymentLinkRequest
         payment_data = {
             "orderCode": order_code,
@@ -205,7 +205,7 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         print(f"[PayOS] Creating payment request: Order {order_code}, Amount {amount:,} VND")
         print(f"[PayOS] Description: {description[:25]}")
         
-        # ✅ PayOS v1.0.0 API: payment_requests.create() (KHÔNG phải payment_links)
+        # [SUCCESS] PayOS v1.0.0 API: payment_requests.create() (KHÔNG phải payment_links)
         print(f"[PayOS] Calling payment_requests.create()...")
         response = payos_client.payment_requests.create(payment_data)
         
@@ -213,7 +213,7 @@ def create_payment_link(order_id, amount, description, customer_email="", return
         print(f"[PayOS] Response attributes: {[attr for attr in dir(response) if not attr.startswith('_')]}")
         
         if response:
-            print(f"[PayOS] ✅ Payment request created successfully!")
+            print(f"[PayOS] [SUCCESS] Payment request created successfully!")
             
             # Extract fields - try multiple attribute names and dict access
             payment_link_id = None
@@ -269,7 +269,7 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             
             print(f"[PayOS]    Payment ID: {payment_link_id}")
             print(f"[PayOS]    Checkout URL: {checkout_url[:80]}..." if len(checkout_url) > 80 else f"[PayOS]    Checkout URL: {checkout_url}")
-            print(f"[PayOS]    QR Code: {'✅ Present' if qr_code else '❌ MISSING'} (length: {len(qr_code) if qr_code else 0})")
+            print(f"[PayOS]    QR Code: {'[SUCCESS] Present' if qr_code else '[ERROR] MISSING'} (length: {len(qr_code) if qr_code else 0})")
             
             if qr_code:
                 print(f"[PayOS]    QR Code first 100 chars: {qr_code[:100]}")
@@ -291,22 +291,22 @@ def create_payment_link(order_id, amount, description, customer_email="", return
             print(f"[PayOS] Returning result keys: {list(result.keys())}")
             return result
         else:
-            print(f"[PayOS] ❌ No response from PayOS!")
+            print(f"[PayOS] [ERROR] No response from PayOS!")
             return {'success': False, 'error': 'No response from PayOS'}
             
     except ValueError as e:
         error_msg = f"Invalid order_id format: {e}"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         traceback.print_exc()
         return {'success': False, 'error': error_msg}
     except AttributeError as e:
         error_msg = f"PayOS response attribute error: {e}"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         traceback.print_exc()
         return {'success': False, 'error': error_msg}
     except Exception as e:
         error_msg = f"Error creating payment link: {e}"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         traceback.print_exc()
         return {'success': False, 'error': error_msg}
 
@@ -367,7 +367,7 @@ def webhook():
     # Handle GET - PayOS verification test
     # ========================================================================
     if request.method == 'GET':
-        print("[WEBHOOK] ✅ GET verification request")
+        print("[WEBHOOK] [SUCCESS] GET verification request")
         response = {
             'code': '00',
             'desc': 'success',
@@ -385,7 +385,7 @@ def webhook():
     # Handle OPTIONS/HEAD - CORS preflight
     # ========================================================================
     if request.method in ['OPTIONS', 'HEAD']:
-        print("[WEBHOOK] ✅ CORS preflight request")
+        print("[WEBHOOK] [SUCCESS] CORS preflight request")
         response = jsonify({'status': 'ok'})
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, HEAD'
@@ -413,7 +413,7 @@ def webhook():
             if signature:
                 print(f"[WEBHOOK] 🔐 Verifying signature: {signature[:20]}...")
                 if not verify_webhook_signature(raw_body, signature):
-                    print("[WEBHOOK] ❌ INVALID SIGNATURE - Rejecting webhook (possible spam/hack attempt)")
+                    print("[WEBHOOK] [ERROR] INVALID SIGNATURE - Rejecting webhook (possible spam/hack attempt)")
                     return jsonify({
                         'code': '99',
                         'desc': 'Invalid signature',
@@ -439,7 +439,7 @@ def webhook():
             try:
                 data = request.get_json(force=True)
             except Exception as parse_error:
-                print(f"[WEBHOOK] ❌ JSON parse error: {parse_error}")
+                print(f"[WEBHOOK] [ERROR] JSON parse error: {parse_error}")
                 return jsonify({
                     'code': '99',
                     'desc': 'Invalid JSON',
@@ -492,7 +492,7 @@ def webhook():
             
             # Test ping (code='00' but no actual payment data)
             if code == '00' and success and not payment_data.get('orderCode'):
-                print("[WEBHOOK] ✅ PayOS test ping successful")
+                print("[WEBHOOK] [SUCCESS] PayOS test ping successful")
                 return jsonify({
                     'code': '00',
                     'desc': 'success',
@@ -501,7 +501,7 @@ def webhook():
             
             # Payment failed
             if code != '00' or not success:
-                print(f"[WEBHOOK] ❌ Payment failed: code={code}, desc={desc}")
+                print(f"[WEBHOOK] [ERROR] Payment failed: code={code}, desc={desc}")
                 return jsonify({
                     'code': code or '99',
                     'desc': desc or 'Payment not successful',
@@ -519,7 +519,7 @@ def webhook():
             
             # Validate order_code
             if not order_code:
-                print("[WEBHOOK] ❌ Missing orderCode in payment data")
+                print("[WEBHOOK] [ERROR] Missing orderCode in payment data")
                 print(f"[WEBHOOK] Available keys: {list(payment_data.keys())}")
                 return jsonify({
                     'code': '99',
@@ -550,7 +550,7 @@ def webhook():
                 order = c.fetchone()
                 
                 if not order:
-                    print(f"[WEBHOOK] ❌ Order not found: {order_code}")
+                    print(f"[WEBHOOK] [ERROR] Order not found: {order_code}")
                     conn.close()
                     return jsonify({
                         'code': '99',
@@ -580,7 +580,7 @@ def webhook():
                 conn.close()
                 
             except sqlite3.Error as db_error:
-                print(f"[WEBHOOK] ❌ Database error: {db_error}")
+                print(f"[WEBHOOK] [ERROR] Database error: {db_error}")
                 return jsonify({
                     'code': '99',
                     'desc': 'Database error',
@@ -610,7 +610,7 @@ def webhook():
                 )
                 
                 if license_key:
-                    print(f"[WEBHOOK] ✅ SUCCESS!")
+                    print(f"[WEBHOOK] [SUCCESS] SUCCESS!")
                     print(f"           License: {license_key}")
                     print(f"           Email: {customer_email}")
                     print(f"           Plan: {plan_type}")
@@ -627,7 +627,7 @@ def webhook():
                         }
                     }), 200
                 else:
-                    print(f"[WEBHOOK] ❌ Failed to generate license (returned None)")
+                    print(f"[WEBHOOK] [ERROR] Failed to generate license (returned None)")
                     return jsonify({
                         'code': '99',
                         'desc': 'Failed to generate license',
@@ -635,7 +635,7 @@ def webhook():
                     }), 500
                     
             except ImportError as import_error:
-                print(f"[WEBHOOK] ❌ Import error: {import_error}")
+                print(f"[WEBHOOK] [ERROR] Import error: {import_error}")
                 traceback.print_exc()
                 return jsonify({
                     'code': '99',
@@ -644,7 +644,7 @@ def webhook():
                 }), 500
             
         except Exception as e:
-            print(f"[WEBHOOK] ❌ EXCEPTION: {e}")
+            print(f"[WEBHOOK] [ERROR] EXCEPTION: {e}")
             traceback.print_exc()
             print("="*80 + "\n")
             return jsonify({
@@ -654,7 +654,7 @@ def webhook():
             }), 500
     
     # Unknown method
-    print(f"[WEBHOOK] ❌ Method not allowed: {request.method}")
+    print(f"[WEBHOOK] [ERROR] Method not allowed: {request.method}")
     return jsonify({
         'code': '99',
         'desc': 'Method not allowed',
@@ -738,5 +738,5 @@ def simulate_payment():
             return response
         
     except Exception as e:
-        print(f"[SIMULATE] ❌ Error: {e}")
+        print(f"[SIMULATE] [ERROR] Error: {e}")
         return jsonify({'error': str(e)}), 500

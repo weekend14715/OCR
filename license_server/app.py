@@ -55,10 +55,10 @@ if os.path.exists(PERSISTENT_DIR) and os.access(PERSISTENT_DIR, os.W_OK):
     print(f"[CONFIG] 💾 Using persistent storage: {DATABASE}")
 else:
     DATABASE = 'licenses.db'
-    print(f"[CONFIG] 📁 Using local storage: {DATABASE}")
+    print(f"[CONFIG] [FOLDER] Using local storage: {DATABASE}")
 
 # PayOS Configuration (from environment variables)
-ADMIN_API_KEY = os.getenv('ADMIN_API_KEY', 'your-secure-admin-api-key-here-change-this')  # ⚠️ Đặt trong Render Environment Variables!
+ADMIN_API_KEY = os.getenv('ADMIN_API_KEY', 'your-secure-admin-api-key-here-change-this')  # [WARNING] Đặt trong Render Environment Variables!
 PAYOS_CLIENT_ID = os.getenv('PAYOS_CLIENT_ID', '')
 PAYOS_API_KEY = os.getenv('PAYOS_API_KEY', '')
 PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
@@ -69,7 +69,7 @@ PAYOS_CHECKSUM_KEY = os.getenv('PAYOS_CHECKSUM_KEY', '')
 
 def init_db():
     """Khởi tạo database"""
-    print(f"[INIT-DB] 🔧 Initializing database at: {DATABASE}")
+    print(f"[INIT-DB] [TOOL] Initializing database at: {DATABASE}")
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     
@@ -125,21 +125,21 @@ def init_db():
     try:
         c.execute("SELECT status FROM licenses LIMIT 1")
     except sqlite3.OperationalError:
-        print("⚠️  Adding missing 'status' column to licenses table...")
+        print("[WARNING]  Adding missing 'status' column to licenses table...")
         c.execute("ALTER TABLE licenses ADD COLUMN status TEXT DEFAULT 'active'")
         c.execute("UPDATE licenses SET status = CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END")
-        print("✓ Migration completed: 'status' column added")
+        print("[OK] Migration completed: 'status' column added")
     
     conn.commit()
     conn.close()
-    print("✓ Database initialized")
+    print("[OK] Database initialized")
 
 # Auto-initialize database on startup (for Gunicorn/production)
 try:
     init_db()
-    print("[STARTUP] ✅ Database auto-initialized")
+    print("[STARTUP] [SUCCESS] Database auto-initialized")
 except Exception as e:
-    print(f"[STARTUP] ⚠️  Database init error (will retry): {e}")
+    print(f"[STARTUP] [WARNING]  Database init error (will retry): {e}")
 
 # ==============================================================================
 # HELPER FUNCTIONS
@@ -217,7 +217,7 @@ def check_order():
         print(f"[CHECK-ORDER] 📂 Database exists: {os.path.exists(DATABASE)}")
         
         if not order_id:
-            print(f"[CHECK-ORDER] ❌ Missing order_id")
+            print(f"[CHECK-ORDER] [ERROR] Missing order_id")
             return jsonify({
                 'success': False,
                 'error': 'Missing order_id parameter'
@@ -228,7 +228,7 @@ def check_order():
             conn = sqlite3.connect(DATABASE)
             c = conn.cursor()
         except Exception as db_error:
-            print(f"[CHECK-ORDER] ❌ Database connection error: {db_error}")
+            print(f"[CHECK-ORDER] [ERROR] Database connection error: {db_error}")
             return jsonify({
                 'success': False,
                 'error': f'Database error: {str(db_error)}'
@@ -246,7 +246,7 @@ def check_order():
             result = c.fetchone()
         except Exception as sql_error:
             conn.close()
-            print(f"[CHECK-ORDER] ❌ SQL query error: {sql_error}")
+            print(f"[CHECK-ORDER] [ERROR] SQL query error: {sql_error}")
             import traceback
             traceback.print_exc()
             return jsonify({
@@ -257,7 +257,7 @@ def check_order():
         conn.close()
         
         if not result:
-            print(f"[CHECK-ORDER] ❌ Order not found: {order_id}")
+            print(f"[CHECK-ORDER] [ERROR] Order not found: {order_id}")
             return jsonify({
                 'success': False,
                 'error': 'Order not found'
@@ -269,7 +269,7 @@ def check_order():
         
         # Check if payment completed and license generated
         if payment_status == 'completed' and license_key:
-            print(f"[CHECK-ORDER] ✅ Returning completed order with license")
+            print(f"[CHECK-ORDER] [SUCCESS] Returning completed order with license")
             return jsonify({
                 'success': True,
                 'order_id': order_id,
@@ -293,7 +293,7 @@ def check_order():
             }), 200
             
     except Exception as e:
-        print(f"❌ Error checking order: {e}")
+        print(f"[ERROR] Error checking order: {e}")
         traceback.print_exc()
         return jsonify({
             'success': False,
@@ -725,13 +725,13 @@ def admin_generate_license():
                     if result['success']:
                         email_sent = True
                         email_result = f"Sent via {result['account_used']}"
-                        print(f"✅ Email sent to {email} via {result['account_used']}")
+                        print(f"[SUCCESS] Email sent to {email} via {result['account_used']}")
                         print(f"   License: {license_key}")
                     else:
-                        print(f"❌ Failed to send email: {result['message']}")
+                        print(f"[ERROR] Failed to send email: {result['message']}")
                         email_result = f"Failed: {result['message']}"
             except Exception as e:
-                print(f"❌ Email error: {e}")
+                print(f"[ERROR] Email error: {e}")
                 email_result = f"Error: {str(e)}"
         
         response = {
@@ -959,7 +959,7 @@ def debug_email_config():
             })
         
         result['status'] = 'OK - Email config will work!'
-        result['message'] = f'✅ Found {len(accounts)} email account(s)'
+        result['message'] = f'[SUCCESS] Found {len(accounts)} email account(s)'
         
     except json.JSONDecodeError as e:
         result['error'] = f'JSON Parse Error: {str(e)}'
@@ -1282,7 +1282,7 @@ def auto_generate_license(order_id, plan_type, customer_email, transaction_ref):
         existing = c.fetchone()
         
         if existing:
-            print(f"⚠️ License already exists for order {order_id}")
+            print(f"[WARNING] License already exists for order {order_id}")
             conn.close()
             return existing[0]
         
@@ -1321,7 +1321,7 @@ def auto_generate_license(order_id, plan_type, customer_email, transaction_ref):
         conn.commit()
         conn.close()
         
-        print(f"✅ Auto-generated license: {license_key}")
+        print(f"[SUCCESS] Auto-generated license: {license_key}")
         print(f"   Order ID: {order_id}")
         print(f"   Email: {customer_email}")
         
@@ -1337,16 +1337,16 @@ def auto_generate_license(order_id, plan_type, customer_email, transaction_ref):
                 )
                 
                 if result['success']:
-                    print(f"✅ Email sent to {customer_email} via {result['account_used']}")
+                    print(f"[SUCCESS] Email sent to {customer_email} via {result['account_used']}")
                 else:
-                    print(f"❌ Failed to send email: {result['message']}")
+                    print(f"[ERROR] Failed to send email: {result['message']}")
             except Exception as e:
-                print(f"❌ Email error: {e}")
+                print(f"[ERROR] Email error: {e}")
         
         return license_key
         
     except Exception as e:
-        print(f"❌ Error generating license: {e}")
+        print(f"[ERROR] Error generating license: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -1411,7 +1411,7 @@ def auto_generate_license_for_order(order_id, payment_method, transaction_id):
         conn.commit()
         conn.close()
         
-        print(f"✅ Auto-generated license: {license_key} for order: {order_id}")
+        print(f"[SUCCESS] Auto-generated license: {license_key} for order: {order_id}")
         
         # Gửi email license key cho khách hàng
         if EMAIL_ENABLED and customer_email:
@@ -1425,11 +1425,11 @@ def auto_generate_license_for_order(order_id, payment_method, transaction_id):
                 )
                 
                 if result['success']:
-                    print(f"✅ Email sent to {customer_email} via {result['account_used']}")
+                    print(f"[SUCCESS] Email sent to {customer_email} via {result['account_used']}")
                 else:
-                    print(f"❌ Failed to send email: {result['message']}")
+                    print(f"[ERROR] Failed to send email: {result['message']}")
             except Exception as e:
-                print(f"❌ Email error: {e}")
+                print(f"[ERROR] Email error: {e}")
         
         return license_key
         
@@ -1598,13 +1598,13 @@ def create_payment_order():
             
             if not payos_result.get('success'):
                 error_msg = payos_result.get('error', 'Unknown error')
-                print(f"❌ PayOS failed: {error_msg}")
+                print(f"[ERROR] PayOS failed: {error_msg}")
                 return jsonify({
                     'error': 'Payment creation failed',
                     'message': error_msg
                 }), 500
             
-            print(f"✅ PayOS Payment Link created: {payos_result.get('payment_link_id')}")
+            print(f"[SUCCESS] PayOS Payment Link created: {payos_result.get('payment_link_id')}")
             
             # 🔥 DEBUG: Log chi tiết response data
             print("========== BACKEND RESPONSE DATA ==========")
@@ -1632,7 +1632,7 @@ def create_payment_order():
             return jsonify(response_data), 200
             
         except Exception as payos_error:
-            print(f"❌ PayOS error: {payos_error}")
+            print(f"[ERROR] PayOS error: {payos_error}")
             import traceback
             traceback.print_exc()
             return jsonify({
@@ -1641,7 +1641,7 @@ def create_payment_order():
             }), 500
         
     except Exception as e:
-        print(f"❌ Error in create_payment_order: {e}")
+        print(f"[ERROR] Error in create_payment_order: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -1712,7 +1712,7 @@ def create_payos_payment():
         )
         
         if result.get('success'):
-            print(f"✅ Created PayOS payment link for {customer_email}")
+            print(f"[SUCCESS] Created PayOS payment link for {customer_email}")
             print(f"   Order ID: {order_id}")
             print(f"   Amount: {amount} VND")
             
@@ -1728,11 +1728,11 @@ def create_payos_payment():
             return jsonify({'error': result.get('error', 'Failed to create payment link')}), 500
         
     except Exception as e:
-        print(f"❌ Error creating payment: {e}")
+        print(f"[ERROR] Error creating payment: {e}")
         return jsonify({'error': str(e)}), 500
 
 
-# ⚠️ DEPRECATED: This webhook is replaced by /payos/webhook (in payos_handler.py)
+# [WARNING] DEPRECATED: This webhook is replaced by /payos/webhook (in payos_handler.py)
 # Keeping for backward compatibility only
 @app.route('/api/webhook/payos', methods=['POST', 'GET', 'HEAD', 'OPTIONS'])
 def payos_webhook_legacy():
@@ -1741,7 +1741,7 @@ def payos_webhook_legacy():
     
     Use /payos/webhook instead (handled by payos_handler.py Blueprint)
     """
-    print("⚠️ Warning: Using deprecated webhook /api/webhook/payos")
+    print("[WARNING] Warning: Using deprecated webhook /api/webhook/payos")
     print("   Please update webhook URL to: /payos/webhook")
     
     # Redirect to new webhook handler
@@ -1788,7 +1788,7 @@ def payos_webhook_legacy():
             return jsonify({'error': 'Failed to generate license'}), 500
             
     except Exception as e:
-        print(f"❌ Legacy webhook error: {e}")
+        print(f"[ERROR] Legacy webhook error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -1841,7 +1841,7 @@ def test_payos_webhook():
 if __name__ == '__main__':
     init_db()
     print("\n" + "="*60)
-    print("🚀 Vietnamese OCR Tool - License Server")
+    print("[ROCKET] Vietnamese OCR Tool - License Server")
     print("="*60)
     print(f"Server running on: http://127.0.0.1:5000")
     print(f"Admin API Key: {ADMIN_API_KEY}")
