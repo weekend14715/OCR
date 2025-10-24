@@ -153,11 +153,11 @@ if __name__ == "__main__":
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(loader_code)
             
-            print(f"✅ Obfuscated {input_file} -> {output_file}")
+            print(f"[OK] Obfuscated {input_file} -> {output_file}")
             return True
             
         except Exception as e:
-            print(f"❌ Obfuscation failed: {e}")
+            print(f"[ERROR] Obfuscation failed: {e}")
             return False
     
     def obfuscate_directory(self, input_dir, output_dir):
@@ -178,11 +178,11 @@ if __name__ == "__main__":
                         # Obfuscate file
                         self.obfuscate_file(input_path, output_path)
             
-            print(f"✅ Obfuscated directory {input_dir} -> {output_dir}")
+            print(f"[OK] Obfuscated directory {input_dir} -> {output_dir}")
             return True
             
         except Exception as e:
-            print(f"❌ Directory obfuscation failed: {e}")
+            print(f"[ERROR] Directory obfuscation failed: {e}")
             return False
 
 def create_protected_executable():
@@ -253,14 +253,14 @@ exe = EXE(
         with open('VietnameseOCRTool.spec', 'w') as f:
             f.write(spec_content)
         
-        print("✅ Created PyInstaller spec file")
+        print("[OK] Created PyInstaller spec file")
         return True
         
     except ImportError:
-        print("❌ PyInstaller not installed. Install with: pip install pyinstaller")
+        print("[ERROR] PyInstaller not installed. Install with: pip install pyinstaller")
         return False
     except Exception as e:
-        print(f"❌ Failed to create executable spec: {e}")
+        print(f"[ERROR] Failed to create executable spec: {e}")
         return False
 
 if __name__ == "__main__":

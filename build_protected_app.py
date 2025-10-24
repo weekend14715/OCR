@@ -12,7 +12,7 @@ from pathlib import Path
 
 def install_dependencies():
     """Cài đặt các dependencies cần thiết"""
-    print("📦 Installing dependencies...")
+    print("[PACKAGE] Installing dependencies...")
     
     dependencies = [
         'pyinstaller',
@@ -27,16 +27,23 @@ def install_dependencies():
         'pystray'
     ]
     
+    success_count = 0
+    total_deps = len(dependencies)
+    
     for dep in dependencies:
         try:
             subprocess.run([sys.executable, '-m', 'pip', 'install', dep], check=True)
-            print(f"✅ Installed {dep}")
+            print(f"[OK] Installed {dep}")
+            success_count += 1
         except subprocess.CalledProcessError:
-            print(f"❌ Failed to install {dep}")
+            print(f"[ERROR] Failed to install {dep}")
+    
+    print(f"[SUMMARY] Installed {success_count}/{total_deps} dependencies")
+    return success_count == total_deps
 
 def obfuscate_code():
     """Obfuscate code trước khi build"""
-    print("🔒 Obfuscating code...")
+    print("[OBFUSCATE] Obfuscating code...")
     
     try:
         from code_obfuscator import CodeObfuscator
@@ -54,19 +61,19 @@ def obfuscate_code():
             if os.path.exists(file):
                 obfuscated_file = f"obfuscated_{file}"
                 if obfuscator.obfuscate_file(file, obfuscated_file):
-                    print(f"✅ Obfuscated {file}")
+                    print(f"[OK] Obfuscated {file}")
                 else:
-                    print(f"❌ Failed to obfuscate {file}")
+                    print(f"[ERROR] Failed to obfuscate {file}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Obfuscation failed: {e}")
+        print(f"[ERROR] Obfuscation failed: {e}")
         return False
 
 def create_protected_spec():
     """Tạo PyInstaller spec file cho ứng dụng được bảo vệ"""
-    print("📝 Creating protected spec file...")
+    print("[SPEC] Creating protected spec file...")
     
     spec_content = '''# -*- mode: python ; coding: utf-8 -*-
 
@@ -142,12 +149,12 @@ exe = EXE(
     with open('VietnameseOCRTool_Protected.spec', 'w') as f:
         f.write(spec_content)
     
-    print("✅ Created protected spec file")
+    print("[OK] Created protected spec file")
     return True
 
 def build_executable():
     """Build executable với PyInstaller"""
-    print("🔨 Building protected executable...")
+    print("[BUILD] Building protected executable...")
     
     try:
         # Build với spec file
@@ -158,16 +165,16 @@ def build_executable():
             'VietnameseOCRTool_Protected.spec'
         ], check=True)
         
-        print("✅ Executable built successfully")
+        print("[OK] Executable built successfully")
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ Build failed: {e}")
+        print(f"[ERROR] Build failed: {e}")
         return False
 
 def create_installer():
     """Tạo installer cho ứng dụng"""
-    print("📦 Creating installer...")
+    print("[INSTALLER] Creating installer...")
     
     try:
         # Tạo thư mục dist nếu chưa có
@@ -223,16 +230,16 @@ HỖ TRỢ:
             
             zipf.writestr('README.txt', readme_content)
         
-        print(f"✅ Installer created: {zip_path}")
+        print(f"[OK] Installer created: {zip_path}")
         return True
         
     except Exception as e:
-        print(f"❌ Installer creation failed: {e}")
+        print(f"[ERROR] Installer creation failed: {e}")
         return False
 
 def cleanup():
     """Dọn dẹp các file tạm"""
-    print("🧹 Cleaning up...")
+    print("[CLEANUP] Cleaning up...")
     
     temp_files = [
         'obfuscated_ocr_tool_licensed.py',
@@ -244,50 +251,50 @@ def cleanup():
     for file in temp_files:
         if os.path.exists(file):
             os.remove(file)
-            print(f"🗑️ Removed {file}")
+            print(f"[REMOVED] {file}")
     
     # Xóa thư mục build
     if os.path.exists('build'):
         shutil.rmtree('build')
-        print("🗑️ Removed build directory")
+        print("[REMOVED] build directory")
 
 def main():
     """Hàm main để build ứng dụng được bảo vệ"""
-    print("🛡️ Building Protected Vietnamese OCR Tool")
+    print("[BUILD] Building Protected Vietnamese OCR Tool")
     print("=" * 50)
     
     # Bước 1: Cài đặt dependencies
     if not install_dependencies():
-        print("❌ Failed to install dependencies")
+        print("[ERROR] Failed to install dependencies")
         return False
     
     # Bước 2: Obfuscate code
     if not obfuscate_code():
-        print("❌ Failed to obfuscate code")
+        print("[ERROR] Failed to obfuscate code")
         return False
     
     # Bước 3: Tạo spec file
     if not create_protected_spec():
-        print("❌ Failed to create spec file")
+        print("[ERROR] Failed to create spec file")
         return False
     
     # Bước 4: Build executable
     if not build_executable():
-        print("❌ Failed to build executable")
+        print("[ERROR] Failed to build executable")
         return False
     
     # Bước 5: Tạo installer
     if not create_installer():
-        print("❌ Failed to create installer")
+        print("[ERROR] Failed to create installer")
         return False
     
     # Bước 6: Cleanup
     cleanup()
     
     print("\n" + "=" * 50)
-    print("✅ Protected application built successfully!")
-    print("📦 Installer: VietnameseOCRTool_Protected.zip")
-    print("🛡️ Protection features enabled:")
+    print("[SUCCESS] Protected application built successfully!")
+    print("[PACKAGE] Installer: VietnameseOCRTool_Protected.zip")
+    print("[PROTECTION] Protection features enabled:")
     print("   - Code obfuscation")
     print("   - Hardware binding")
     print("   - Online verification")
