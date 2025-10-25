@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkFont
 import re
+from .license_activator import LicenseActivator
 
 
 class LicenseDialog:
@@ -15,6 +16,8 @@ class LicenseDialog:
     def __init__(self):
         self.license_key = None
         self.root = None
+        self.activator = LicenseActivator()
+        self.activation_result = None
     
     def show(self):
         """
@@ -293,9 +296,85 @@ class LicenseDialog:
             )
             return
         
-        # Lưu key và đóng dialog
-        self.license_key = key
-        self.root.destroy()
+        # Disable button khi đang xử lý
+        self.activate_btn.config(state='disabled', text="⏳ ĐANG KÍCH HOẠT...")
+        self.status_label.config(text="🔄 Đang kết nối server...", fg="#3498db")
+        self.root.update()
+        
+        # Thực hiện kích hoạt với server
+        try:
+            result = self.activator.activate_online(key)
+            
+            if result['success']:
+                # Kích hoạt thành công!
+                self.license_key = key
+                self.activation_result = result
+                
+                # Tạo thông báo thành công với thông tin chi tiết
+                data = result.get('data', {})
+                plan = data.get('plan', 'Unknown')
+                activated_at = data.get('activated', 'N/A')
+                expires_at = data.get('expires', 'N/A')
+                activation_type = data.get('activation_type', 'online')
+                
+                # Format message
+                success_msg = "✅ KÍCH HOẠT THÀNH CÔNG!\n\n"
+                success_msg += f"📋 License Key: {key}\n"
+                success_msg += f"💎 Gói dịch vụ: {plan}\n"
+                
+                if activation_type == 'online':
+                    if activated_at != 'N/A':
+                        success_msg += f"📅 Ngày kích hoạt: {activated_at}\n"
+                    if expires_at != 'N/A' and expires_at != 'lifetime':
+                        success_msg += f"⏰ Hết hạn: {expires_at}\n"
+                    elif expires_at == 'lifetime':
+                        success_msg += f"⏰ Thời hạn: Vĩnh viễn 🎉\n"
+                else:
+                    success_msg += f"🔒 Chế độ: Offline\n"
+                
+                success_msg += f"\n{result.get('message', 'Bạn có thể sử dụng phần mềm ngay bây giờ!')}"
+                
+                messagebox.showinfo("🎉 Thành công", success_msg)
+                
+                # Đóng dialog
+                self.root.destroy()
+                
+            else:
+                # Kích hoạt thất bại
+                error_msg = result.get('message', 'Lỗi không xác định')
+                
+                # Format error message dễ hiểu hơn
+                if 'not found' in error_msg.lower() or 'không tìm thấy' in error_msg.lower():
+                    error_detail = "❌ License Key không tồn tại trong hệ thống\n\n"
+                    error_detail += "Vui lòng kiểm tra lại hoặc liên hệ để mua license mới."
+                elif 'already activated' in error_msg.lower() or 'đã kích hoạt' in error_msg.lower():
+                    error_detail = "⚠️ License Key đã được kích hoạt trên máy khác\n\n"
+                    error_detail += "Mỗi key chỉ có thể kích hoạt trên 1 máy.\n"
+                elif 'expired' in error_msg.lower() or 'hết hạn' in error_msg.lower():
+                    error_detail = "⏰ License Key đã hết hạn\n\n"
+                    error_detail += "Vui lòng gia hạn hoặc mua license mới."
+                elif 'timeout' in error_msg.lower():
+                    error_detail = "🌐 Không thể kết nối đến server\n\n"
+                    error_detail += "Vui lòng kiểm tra kết nối internet và thử lại."
+                else:
+                    error_detail = f"❌ Kích hoạt thất bại\n\n{error_msg}"
+                
+                messagebox.showerror("Lỗi kích hoạt", error_detail)
+                
+                # Reset button
+                self.activate_btn.config(state='normal', text="✓ KÍCH HOẠT")
+                self.status_label.config(text="✗ Kích hoạt thất bại", fg="#e74c3c")
+                
+        except Exception as e:
+            # Lỗi không mong muốn
+            messagebox.showerror(
+                "Lỗi",
+                f"❌ Có lỗi xảy ra:\n\n{str(e)}\n\nVui lòng thử lại sau."
+            )
+            
+            # Reset button
+            self.activate_btn.config(state='normal', text="✓ KÍCH HOẠT")
+            self.status_label.config(text="✗ Có lỗi xảy ra", fg="#e74c3c")
     
     def _on_cancel(self):
         """Callback khi nhấn Hủy"""

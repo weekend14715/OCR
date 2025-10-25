@@ -1,10 +1,11 @@
-; Vietnamese OCR Tool - Inno Setup Script
+; Vietnamese OCR Tool - Inno Setup Script with Code Signing
 ; Tác giả: Vietnamese OCR Tool
-; Mô tả: Script cài đặt cho ứng dụng OCR tiếng Việt
+; Mô tả: Script cài đặt có chữ ký số cho ứng dụng OCR tiếng Việt
 
 #define MyAppName "Vietnamese OCR Tool"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Vietnamese OCR Team"
+#define MyAppURL "https://github.com/yourusername/vietnamese-ocr-tool"
 #define MyAppExeName "ocr_tool.exe"
 #define MyAppIcon "app_icon.ico"
 
@@ -14,17 +15,28 @@ AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 OutputDir=Output
-OutputBaseFilename=VietnameseOCRTool_Setup
+OutputBaseFilename=VietnameseOCRTool_Setup_v{#MyAppVersion}
 SetupIconFile={#MyAppIcon}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppIcon}
+
+; ============================================
+; CODE SIGNING - Chữ ký số
+; ============================================
+; Ký file cài đặt (setup.exe)
+; SignTool=signtool sign /f "MyCert.pfx" /p "123456" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "OCR License System Setup" /du "https://github.com/your-repo" $f
+; Ký các file bên trong gói cài đặt
+SignedUninstaller=no
 
 ; Ngôn ngữ
 ShowLanguageDialog=no
@@ -41,7 +53,7 @@ Name: "startup"; Description: "Launch at Windows startup"; GroupDescription: "St
 
 [Files]
 ; File thực thi chính (giả sử bạn đã build bằng PyInstaller)
-Source: "dist\ocr_tool\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\ocr_tool.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Icon
 Source: "{#MyAppIcon}"; DestDir: "{app}"; Flags: ignoreversion
@@ -55,6 +67,13 @@ Source: "tesseract-main\tessdata\vie.traineddata"; DestDir: "{app}\Tesseract-OCR
 
 ; Các file cấu hình bổ sung (nếu có)
 Source: "tesseract-main\tessdata\configs\*"; DestDir: "{app}\Tesseract-OCR\tessdata\configs"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+
+; Thư mục license
+Source: "license\*"; DestDir: "{app}\license"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+; License file (nếu có)
+Source: ".lic"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: ".checksum"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "tesseract-main\tessdata\tessconfigs\*"; DestDir: "{app}\Tesseract-OCR\tessdata\tessconfigs"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "tesseract-main\tessdata\pdf.ttf"; DestDir: "{app}\Tesseract-OCR\tessdata"; Flags: ignoreversion skipifsourcedoesntexist
 

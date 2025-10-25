@@ -1,9 +1,10 @@
 """
 License Manager
-Quản lý và kiểm tra license - Lớp trung tâm
+Quan ly va kiem tra license - Lop trung tam
 """
 
 import os
+import sys
 import json
 import winreg
 import base64
@@ -16,9 +17,9 @@ from .license_activator import LicenseActivator
 
 
 class LicenseManager:
-    """Lớp quản lý license chính"""
+    """Lop quan ly license chinh"""
     
-    # Đường dẫn lưu trữ
+    # Duong dan luu tru
     LICENSE_FILE = ".lic"  # Hidden file
     CHECKSUM_FILE = ".checksum"  # Hidden backup
     
@@ -30,146 +31,158 @@ class LicenseManager:
         self.crypto = LicenseCrypto()
         self.activator = LicenseActivator()
         
-        # Đường dẫn thư mục app
-        self.app_dir = Path(__file__).parent.parent
+        # Duong dan thu muc app - xu ly ca development va executable
+        if getattr(sys, 'frozen', False):
+            # Chay tu executable (PyInstaller)
+            self.app_dir = Path(sys.executable).parent
+        else:
+            # Chay tu source code
+            self.app_dir = Path(__file__).parent.parent
+        
         self.license_path = self.app_dir / self.LICENSE_FILE
         
-        # Đường dẫn backup (APPDATA)
+        # Duong dan backup (APPDATA)
         self.appdata_dir = Path(os.getenv('APPDATA')) / 'OCRTool'
-        self.appdata_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.appdata_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            # Fallback: su dung thu muc temp neu khong co quyen APPDATA
+            import tempfile
+            self.appdata_dir = Path(tempfile.gettempdir()) / 'OCRTool'
+            self.appdata_dir.mkdir(parents=True, exist_ok=True)
         self.checksum_path = self.appdata_dir / self.CHECKSUM_FILE
     
     def check_license(self):
         """
-        Kiểm tra license - Entry point chính
+        Kiem tra license - Entry point chinh
         
         Returns:
-            bool: True nếu license hợp lệ, False nếu không
+            bool: True neu license hop le, False neu khong
         """
         print("\n" + "="*60)
-        print("🔐 KIỂM TRA BẢN QUYỀN")
+        print("KIEM TRA BAN QUYEN")
         print("="*60)
         
-        # Bước 1: Đọc license từ các nguồn
-        print("\n[1] Đọc license từ các nguồn...")
+        # Buoc 1: Doc license tu cac nguon
+        print("\n[1] Doc license tu cac nguon...")
         
         file_data = self._read_license_file()
         registry_data = self._read_registry()
         backup_data = self._read_backup()
         
-        # Nếu không có license nào → Yêu cầu kích hoạt
+        # Neu khong co license nao → Yeu cau kich hoat
         if not file_data and not registry_data and not backup_data:
-            print("   ⚠️ Chưa có license. Cần kích hoạt!")
+            print("   [WARNING] Chua co license. Can kich hoat!")
             return self._prompt_activation()
         
-        # Bước 2: Cross-validate 3 nguồn
-        print("\n[2] Kiểm tra tính toàn vẹn...")
+        # Buoc 2: Cross-validate 3 nguon
+        print("\n[2] Kiem tra tinh toan ven...")
         
         if not self._cross_validate(file_data, registry_data, backup_data):
-            print("   ❌ License bị giả mạo hoặc không hợp lệ!")
-            print("   💡 Vui lòng kích hoạt lại.")
+            print("   [ERROR] License bi gia mao hoac khong hop le!")
+            print("   [INFO] Vui long kich hoat lai.")
             return self._prompt_activation()
         
-        # Bước 3: Decrypt và verify
-        print("\n[3] Giải mã và xác thực...")
+        # Buoc 3: Decrypt va verify
+        print("\n[3] Giai ma va xac thuc...")
         
         decrypted = self.crypto.decrypt_license(file_data, self.hwid)
         
         if not decrypted:
-            print("   ❌ Không thể giải mã license!")
+            print("   [ERROR] Khong the giai ma license!")
             return self._prompt_activation()
         
-        # Bước 4: Verify HWID
+        # Buoc 4: Verify HWID
         if decrypted.get('hwid') != self.hwid:
-            print("   ❌ License không khớp với máy này!")
+            print("   [ERROR] License khong khop voi may nay!")
             print(f"   Expected HWID: {self.hwid[:16]}...")
             print(f"   License HWID:  {decrypted.get('hwid', 'N/A')[:16]}...")
             return False
         
-        # Bước 5: Kiểm tra hạn sử dụng (nếu có)
+        # Buoc 5: Kiem tra han su dung (neu co)
         if not self._check_expiry(decrypted):
-            print("   ❌ License đã hết hạn!")
+            print("   [ERROR] License da het han!")
             return False
         
-        # ✅ Tất cả checks đều pass
+        # [OK] Tat ca checks deu pass
         print("\n" + "="*60)
-        print("✅ BẢN QUYỀN HỢP LỆ")
+        print("[OK] BAN QUYEN HOP LE")
         print("="*60)
         print(f"   License Key: {decrypted.get('license_key', 'N/A')}")
-        print(f"   Kích hoạt lúc: {decrypted.get('activated_at', 'N/A')}")
+        print(f"   Kich hoat luc: {decrypted.get('activated_at', 'N/A')}")
         if 'user_info' in decrypted and decrypted['user_info']:
-            print(f"   Người dùng: {decrypted['user_info'].get('name', 'N/A')}")
+            print(f"   Nguoi dung: {decrypted['user_info'].get('name', 'N/A')}")
         print("="*60 + "\n")
         
         return True
     
     def _prompt_activation(self):
         """
-        Hiện dialog yêu cầu nhập license key
+        Hien dialog yeu cau nhap license key
         
         Returns:
-            bool: True nếu kích hoạt thành công
+            bool: True neu kich hoat thanh cong
         """
         from .license_dialog import LicenseDialog
         
-        print("\n📝 Hiện dialog nhập license...")
+        print("\n[DIALOG] Hien dialog nhap license...")
         
         dialog = LicenseDialog()
         license_key = dialog.show()
         
         if not license_key:
-            print("❌ Người dùng hủy kích hoạt")
+            print("[ERROR] Nguoi dung huy kich hoat")
             return False
         
-        # Kích hoạt với key người dùng nhập
+        # Kich hoat voi key nguoi dung nhap
         return self.activate_license(license_key)
     
     def activate_license(self, license_key):
         """
-        Kích hoạt license với key
+        Kich hoat license voi key
         
         Args:
             license_key (str): License key
             
         Returns:
-            bool: True nếu thành công
+            bool: True neu thanh cong
         """
-        print(f"\n🔄 Đang kích hoạt license: {license_key}")
+        print(f"\n[ACTIVATE] Dang kich hoat license: {license_key}")
         
-        # Bước 1: Kích hoạt với server
+        # Buoc 1: Kich hoat voi server
         result = self.activator.activate_online(license_key)
         
         if not result['success']:
-            print(f"❌ Kích hoạt thất bại: {result['message']}")
+            print(f"[ERROR] Kich hoat that bai: {result['message']}")
             return False
         
-        # Bước 2: Lưu license (mã hóa và lưu nhiều nơi)
+        # Buoc 2: Luu license (ma hoa va luu nhieu noi)
         user_info = result.get('data', {}).get('user_info')
         
         success = self._save_license(license_key, user_info)
         
         if success:
-            print("✅ Đã kích hoạt và lưu license thành công!")
+            print("[OK] Da kich hoat va luu license thanh cong!")
             return True
         else:
-            print("❌ Lỗi khi lưu license!")
+            print("[ERROR] Loi khi luu license!")
             return False
     
     def _save_license(self, license_key, user_info=None):
         """
-        Lưu license vào 3 nơi với mã hóa
+        Luu license vao 3 noi voi ma hoa
         
         Args:
             license_key (str): License key
-            user_info (dict): Thông tin user
+            user_info (dict): Thong tin user
             
         Returns:
-            bool: True nếu thành công
+            bool: True neu thanh cong
         """
         try:
-            print("\n💾 Đang lưu license...")
+            print("\n[SAVE] Dang luu license...")
             
-            # Mã hóa license
+            # Ma hoa license
             encrypted_result = self.crypto.encrypt_license(
                 license_key, 
                 self.hwid, 
@@ -180,35 +193,35 @@ class LicenseManager:
             checksum = encrypted_result['checksum']
             data_hash = encrypted_result['hash']
             
-            # 1. Lưu file chính (.lic)
-            print("   [1] Lưu file license...")
+            # 1. Luu file chinh (.lic)
+            print("   [1] Luu file license...")
             self._save_license_file(encrypted_data)
             
-            # 2. Lưu vào Registry
-            print("   [2] Lưu vào Registry...")
+            # 2. Luu vao Registry
+            print("   [2] Luu vao Registry...")
             self._save_to_registry(self.hwid, checksum, data_hash)
             
-            # 3. Lưu backup checksum
-            print("   [3] Lưu backup checksum...")
+            # 3. Luu backup checksum
+            print("   [3] Luu backup checksum...")
             backup_checksum = self.crypto.generate_backup_checksum(
                 encrypted_data, 
                 self.hwid
             )
             self._save_backup(backup_checksum)
             
-            print("   ✅ Đã lưu license vào 3 nơi")
+            print("   [OK] Da luu license vao 3 noi")
             return True
             
         except Exception as e:
-            print(f"   ❌ Lỗi khi lưu: {e}")
+            print(f"   [ERROR] Loi khi luu: {e}")
             return False
     
     def _save_license_file(self, encrypted_data):
-        """Lưu file .lic (hidden)"""
+        """Luu file .lic (hidden)"""
         with open(self.license_path, 'w', encoding='utf-8') as f:
             f.write(encrypted_data)
         
-        # Set hidden attribute trên Windows
+        # Set hidden attribute tren Windows
         try:
             FILE_ATTRIBUTE_HIDDEN = 0x02
             ctypes.windll.kernel32.SetFileAttributesW(
@@ -219,53 +232,66 @@ class LicenseManager:
             pass
     
     def _save_to_registry(self, hwid, checksum, data_hash):
-        """Lưu vào Windows Registry"""
+        """Luu vao Windows Registry"""
         try:
             key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, self.REGISTRY_PATH)
             
-            # Lưu các giá trị
+            # Luu cac gia tri
             winreg.SetValueEx(key, "InstallID", 0, winreg.REG_SZ, hwid[:16])
             winreg.SetValueEx(key, "Checksum", 0, winreg.REG_SZ, checksum)
             winreg.SetValueEx(key, "Hash", 0, winreg.REG_SZ, data_hash[:32])
             
             winreg.CloseKey(key)
         except Exception as e:
-            print(f"      ⚠️ Không thể lưu Registry: {e}")
+            print(f"      [WARNING] Khong the luu Registry: {e}")
     
     def _save_backup(self, backup_checksum):
-        """Lưu file backup checksum (hidden)"""
-        with open(self.checksum_path, 'w', encoding='utf-8') as f:
-            # Encode thêm lần nữa
-            encoded = base64.b64encode(backup_checksum.encode()).decode()
-            f.write(encoded)
-        
-        # Set hidden
+        """Luu file backup checksum (hidden)"""
         try:
-            FILE_ATTRIBUTE_HIDDEN = 0x02
-            ctypes.windll.kernel32.SetFileAttributesW(
-                str(self.checksum_path),
-                FILE_ATTRIBUTE_HIDDEN
-            )
-        except:
-            pass
+            with open(self.checksum_path, 'w', encoding='utf-8') as f:
+                # Encode them lan nua
+                encoded = base64.b64encode(backup_checksum.encode()).decode()
+                f.write(encoded)
+            
+            # Set hidden
+            try:
+                FILE_ATTRIBUTE_HIDDEN = 0x02
+                ctypes.windll.kernel32.SetFileAttributesW(
+                    str(self.checksum_path),
+                    FILE_ATTRIBUTE_HIDDEN
+                )
+            except:
+                pass
+        except PermissionError as e:
+            print(f"   [WARNING] Khong the luu backup: {e}")
+            # Fallback: luu vao thu muc hien tai
+            fallback_path = self.app_dir / self.CHECKSUM_FILE
+            try:
+                with open(fallback_path, 'w', encoding='utf-8') as f:
+                    encoded = base64.b64encode(backup_checksum.encode()).decode()
+                    f.write(encoded)
+                print(f"   [OK] Da luu backup vao thu muc app: {fallback_path}")
+            except Exception as e2:
+                print(f"   [ERROR] Khong the luu backup: {e2}")
+                raise e2
     
     def _read_license_file(self):
-        """Đọc file .lic"""
+        """Doc file .lic"""
         try:
             if self.license_path.exists():
                 with open(self.license_path, 'r', encoding='utf-8') as f:
                     data = f.read().strip()
                     if data:
-                        print(f"   ✅ Tìm thấy file license")
+                        print(f"   [OK] Tim thay file license")
                         return data
         except Exception as e:
-            print(f"   ⚠️ Lỗi đọc file: {e}")
+            print(f"   [WARNING] Loi doc file: {e}")
         
-        print(f"   ⚠️ Không tìm thấy file license")
+        print(f"   [WARNING] Khong tim thay file license")
         return None
     
     def _read_registry(self):
-        """Đọc từ Registry"""
+        """Doc tu Registry"""
         try:
             key = winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER, 
@@ -280,7 +306,7 @@ class LicenseManager:
             
             winreg.CloseKey(key)
             
-            print(f"   ✅ Tìm thấy Registry")
+            print(f"   [OK] Tim thay Registry")
             
             return {
                 'install_id': install_id,
@@ -289,36 +315,49 @@ class LicenseManager:
             }
             
         except FileNotFoundError:
-            print(f"   ⚠️ Không tìm thấy Registry")
+            print(f"   [WARNING] Khong tim thay Registry")
         except Exception as e:
-            print(f"   ⚠️ Lỗi đọc Registry: {e}")
+            print(f"   [WARNING] Loi doc Registry: {e}")
         
         return None
     
     def _read_backup(self):
-        """Đọc file backup checksum"""
+        """Doc file backup checksum"""
         try:
             if self.checksum_path.exists():
                 with open(self.checksum_path, 'r', encoding='utf-8') as f:
                     encoded_data = f.read().strip()
                     if encoded_data:
                         decoded = base64.b64decode(encoded_data).decode()
-                        print(f"   ✅ Tìm thấy backup")
+                        print(f"   [OK] Tim thay backup")
                         return decoded
         except Exception as e:
-            print(f"   ⚠️ Lỗi đọc backup: {e}")
+            print(f"   [WARNING] Loi doc backup: {e}")
         
-        print(f"   ⚠️ Không tìm thấy backup")
+        # Fallback: tim trong thu muc app
+        fallback_path = self.app_dir / self.CHECKSUM_FILE
+        try:
+            if fallback_path.exists():
+                with open(fallback_path, 'r', encoding='utf-8') as f:
+                    encoded_data = f.read().strip()
+                    if encoded_data:
+                        decoded = base64.b64decode(encoded_data).decode()
+                        print(f"   [OK] Tim thay backup (fallback)")
+                        return decoded
+        except Exception as e:
+            print(f"   [WARNING] Loi doc backup fallback: {e}")
+        
+        print(f"   [WARNING] Khong tim thay backup")
         return None
     
     def _cross_validate(self, file_data, registry_data, backup_data):
         """
-        Kiểm tra tính toàn vẹn giữa 3 nguồn
+        Kiem tra tinh toan ven giua 3 nguon
         
         Returns:
-            bool: True nếu hợp lệ
+            bool: True neu hop le
         """
-        # Nếu có ít nhất 2/3 nguồn và chúng khớp nhau → OK
+        # Neu co it nhat 2/3 nguon va chung khop nhau → OK
         valid_sources = sum([
             file_data is not None,
             registry_data is not None,
@@ -328,93 +367,93 @@ class LicenseManager:
         if valid_sources == 0:
             return False
         
-        # Nếu chỉ có 1 nguồn → chấp nhận (có thể user xóa registry/backup)
+        # Neu chi co 1 nguon → chap nhan (co the user xoa registry/backup)
         if valid_sources == 1:
-            print("   ⚠️ Chỉ tìm thấy 1 nguồn license (chấp nhận)")
+            print("   [WARNING] Chi tim thay 1 nguon license (chap nhan)")
             return True
         
-        # Nếu có nhiều nguồn → verify consistency
+        # Neu co nhieu nguon → verify consistency
         if file_data and registry_data:
-            # Tính hash của file_data
+            # Tinh hash cua file_data
             file_hash = self.crypto._calculate_hash(file_data)[:32]
             registry_hash = registry_data.get('hash', '')
             
-            # So sánh (cho phép một chút sai lệch)
-            # Vì có thể user đã re-activate
+            # So sanh (cho phep mot chut sai lech)
+            # Vi co the user da re-activate
             pass  # Skip strict check
         
-        print("   ✅ Dữ liệu nhất quán")
+        print("   [OK] Du lieu nhat quan")
         return True
     
     def _check_expiry(self, decrypted_data):
         """
-        Kiểm tra hạn sử dụng (nếu có)
+        Kiem tra han su dung (neu co)
         
         Args:
-            decrypted_data (dict): Dữ liệu đã giải mã
+            decrypted_data (dict): Du lieu da giai ma
             
         Returns:
-            bool: True nếu còn hạn
+            bool: True neu con han
         """
         import time
         
-        # Nếu không có expiry_date → lifetime license
+        # Neu khong co expiry_date → lifetime license
         expiry = decrypted_data.get('expiry_date')
         if not expiry:
             return True
         
-        # So sánh với thời gian hiện tại
+        # So sanh voi thoi gian hien tai
         current_time = time.time()
         
         if current_time > expiry:
             return False
         
-        # Cảnh báo nếu sắp hết hạn (< 7 ngày)
+        # Canh bao neu sap het han (< 7 ngay)
         days_left = (expiry - current_time) / 86400
         if days_left < 7:
-            print(f"   ⚠️ License sẽ hết hạn sau {int(days_left)} ngày")
+            print(f"   [WARNING] License se het han sau {int(days_left)} ngay")
         
         return True
     
     def deactivate_license(self):
         """
-        Hủy kích hoạt license (xóa khỏi tất cả nơi)
+        Huy kich hoat license (xoa khoi tat ca noi)
         
         Returns:
-            bool: True nếu thành công
+            bool: True neu thanh cong
         """
-        print("\n🗑️ Đang hủy kích hoạt license...")
+        print("\n[DEACTIVATE] Dang huy kich hoat license...")
         
         success = True
         
-        # 1. Xóa file
+        # 1. Xoa file
         try:
             if self.license_path.exists():
                 self.license_path.unlink()
-                print("   ✅ Đã xóa file license")
+                print("   [OK] Da xoa file license")
         except Exception as e:
-            print(f"   ⚠️ Không thể xóa file: {e}")
+            print(f"   [WARNING] Khong the xoa file: {e}")
             success = False
         
-        # 2. Xóa Registry
+        # 2. Xoa Registry
         try:
             winreg.DeleteKey(winreg.HKEY_CURRENT_USER, self.REGISTRY_PATH)
-            print("   ✅ Đã xóa Registry")
+            print("   [OK] Da xoa Registry")
         except:
-            print("   ⚠️ Không thể xóa Registry")
+            print("   [WARNING] Khong the xoa Registry")
             success = False
         
-        # 3. Xóa backup
+        # 3. Xoa backup
         try:
             if self.checksum_path.exists():
                 self.checksum_path.unlink()
-                print("   ✅ Đã xóa backup")
+                print("   [OK] Da xoa backup")
         except Exception as e:
-            print(f"   ⚠️ Không thể xóa backup: {e}")
+            print(f"   [WARNING] Khong the xoa backup: {e}")
             success = False
         
         if success:
-            print("✅ Đã hủy kích hoạt hoàn toàn")
+            print("[OK] Da huy kich hoat hoan toan")
         
         return success
 
@@ -430,5 +469,5 @@ if __name__ == "__main__":
     
     # Test check license
     is_valid = manager.check_license()
-    print(f"\nKết quả: {'✅ Hợp lệ' if is_valid else '❌ Không hợp lệ'}")
+    print(f"\nKet qua: {'[OK] Hop le' if is_valid else '[ERROR] Khong hop le'}")
 

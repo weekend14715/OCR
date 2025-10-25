@@ -10,11 +10,15 @@ import time
 import configparser
 import sys
 import os
+import signal
 from pystray import MenuItem as item, Icon
 import numpy as np
 
 # Import License Manager
 from license import LicenseManager
+
+# Import Hotkey Manager
+from Hotkey.hotkey_manager import HotkeyManager
 
 # --- CẤU HÌNH ---
 
@@ -22,7 +26,7 @@ APP_NAME = "VietnameseOCRTool"
 CONFIG_DIR = os.path.join(os.getenv('LOCALAPPDATA'), APP_NAME) 
 os.makedirs(CONFIG_DIR, exist_ok=True) 
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.ini')
-ICON_FILE = 'icon.png'
+ICON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app_icon.ico')
 
 def get_tesseract_path():
     """Tìm đường dẫn đến tesseract.exe một cách linh động."""
@@ -32,18 +36,46 @@ def get_tesseract_path():
     else:
         tesseract_path = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     
-    print(f"Đường dẫn Tesseract được sử dụng: {tesseract_path}")
+    print(f"Duong dan Tesseract duoc su dung: {tesseract_path}")
     return tesseract_path
 
 try:
     pytesseract.pytesseract.tesseract_cmd = get_tesseract_path()
 except Exception as e:
-    print(f"Lỗi khi thiết lập Tesseract: {e}")
+    print(f"Loi khi thiet lap Tesseract: {e}")
 
 # --- BIẾN TOÀN CỤC ---
-current_hotkey = None
-hotkey_handle = None
+hotkey_manager = None
 app_icon = None
+
+def cleanup_and_exit():
+    """Cleanup toàn bộ và thoát ứng dụng."""
+    global hotkey_manager, app_icon
+    
+    print("\nDang cleanup...")
+    
+    # Cleanup hotkey manager
+    if hotkey_manager:
+        try:
+            hotkey_manager.cleanup()
+        except:
+            pass
+    
+    # Cleanup pystray
+    try:
+        if app_icon:
+            app_icon.stop()
+        import pystray
+        pystray.Icon.stop_all()
+    except:
+        pass
+    
+    print("Cleanup hoan tat")
+    os._exit(0)
+
+def signal_handler(signum, frame):
+    """Xử lý signal để cleanup khi app bị terminate."""
+    cleanup_and_exit()
 
 # ==============================================================================
 # PHẦN XỬ LÝ DPI VÀ GIAO DIỆN CHỌN VÙNG
@@ -102,7 +134,7 @@ def preprocess_image(image):
         
         # Bước 6: Khử nhiễu salt-and-pepper (nhiễu điểm trắng đen)
         cleaned_image = remove_noise(threshold_image)
-        print("🧹 Đã làm sạch nhiễu")
+        print("Da lam sach nhieu")
         
         # Bước 7: Làm mịn viền chữ (morphological operations)
         final_image = smooth_text(cleaned_image)
@@ -111,7 +143,7 @@ def preprocess_image(image):
         return final_image
         
     except Exception as e:
-        print(f"⚠ Lỗi khi tiền xử lý ảnh: {e}")
+        print(f"Loi khi tien xu ly anh: {e}")
         # Nếu có lỗi, trả về ảnh grayscale đơn giản
         return image.convert('L')
 
@@ -165,7 +197,7 @@ def apply_threshold(image):
         return threshold_image
         
     except Exception as e:
-        print(f"⚠ Lỗi khi áp dụng threshold: {e}")
+        print(f"Loi khi ap dung threshold: {e}")
         # Fallback: sử dụng threshold cố định
         return image.point(lambda p: 255 if p > 128 else 0)
 
@@ -224,7 +256,7 @@ class ScreenSelector:
             screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))
             self.ocr(screenshot)
         else:
-            print("⚠ Vùng chọn quá nhỏ!")
+            print("Vung chon qua nho!")
 
     def cancel(self):
         """Hủy thao tác chọn vùng."""
@@ -263,7 +295,7 @@ class ScreenSelector:
             if text:
                 pyperclip.copy(text)
                 print("\n" + "="*55)
-                print("✓ HOÀN THÀNH - ĐÃ COPY VÀO CLIPBOARD!")
+                print("HOAN THANH - DA COPY VAO CLIPBOARD!")
                 print("="*55)
                 
                 # Hiển thị nội dung
@@ -277,7 +309,7 @@ class ScreenSelector:
                 print("="*55 + "\n")
             else:
                 print("\n" + "="*55)
-                print("⚠ KHÔNG NHẬN DIỆN ĐƯỢC CHỮ!")
+                print("KHONG NHAN DIEN DUOC CHU!")
                 print("="*55)
                 print("💡 Gợi ý:")
                 print("   • Chọn vùng có chữ rõ ràng hơn")
@@ -286,280 +318,17 @@ class ScreenSelector:
                 print("="*55 + "\n")
                 
         except Exception as e:
-            print(f"\n❌ LỖI KHI NHẬN DIỆN: {e}\n")
+            print(f"\nLOI KHI NHAN DIEN: {e}\n")
 
 def trigger_ocr_selection():
     """Hàm được gọi khi nhấn phím tắt."""
+    current_hotkey = hotkey_manager.get_current_hotkey() if hotkey_manager else "unknown"
     print(f"\n▶ Đã nhấn phím tắt '{current_hotkey}' - Bắt đầu chọn vùng...")
     Thread(target=lambda: ScreenSelector().start(), daemon=True).start()
 
 # ==============================================================================
-# GIAO DIỆN YÊU CẦU NHẬP PHÍM TẮT
+# PHẦN QUẢN LÝ CẤU HÌNH VÀ PHÍM TẮT (ĐÃ CHUYỂN VÀO HOTKEY MANAGER)
 # ==============================================================================
-
-class HotkeySelectorWindow:
-    """Tạo cửa sổ chọn phím tắt với các tùy chọn có sẵn."""
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Chọn phím tắt OCR")
-        self.root.attributes('-topmost', True)
-        self.root.geometry("500x450")
-        self.root.configure(bg="#2c3e50")
-        self.root.resizable(False, False)
-        
-        self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.root.winfo_screenheight() // 2) - (450 // 2)
-        self.root.geometry(f"500x450+{x}+{y}")
-        
-        self.selected_hotkey = None
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Thiết lập giao diện người dùng."""
-        title_font = tkFont.Font(family="Arial", size=16, weight="bold")
-        button_font = tkFont.Font(family="Arial", size=12, weight="bold")
-        desc_font = tkFont.Font(family="Arial", size=10)
-        
-        title_label = tk.Label(
-            self.root,
-            text="🎯 CHỌN PHÍM TẮT CHO OCR TOOL",
-            font=title_font,
-            bg="#2c3e50",
-            fg="#ecf0f1"
-        )
-        title_label.pack(pady=20)
-        
-        desc_label = tk.Label(
-            self.root,
-            text="Chọn một trong các tùy chọn bên dưới:",
-            font=desc_font,
-            bg="#2c3e50",
-            fg="#bdc3c7"
-        )
-        desc_label.pack(pady=(0, 20))
-        
-        button_frame = tk.Frame(self.root, bg="#2c3e50")
-        button_frame.pack(expand=True, fill="both", padx=30, pady=10)
-        
-        hotkey_options = [
-            {"key": "ctrl+q", "name": "Ctrl + Q", "desc": "Tổ hợp phím phổ biến, dễ nhớ"},
-            {"key": "alt+space", "name": "Alt + Space", "desc": "Nhanh gọn, không xung đột"},
-            {"key": "ctrl+shift+c", "name": "Ctrl + Shift + C", "desc": "Phím tắt chuyên nghiệp"}
-        ]
-        
-        for option in hotkey_options:
-            btn_frame = tk.Frame(button_frame, bg="#34495e", relief="raised", bd=2)
-            btn_frame.pack(fill="x", pady=5)
-            
-            btn = tk.Button(
-                btn_frame,
-                text=f"{option['name']}",
-                font=button_font,
-                bg="#3498db",
-                fg="white",
-                relief="flat",
-                command=lambda k=option['key']: self.select_hotkey(k)
-            )
-            btn.pack(fill="x", padx=5, pady=5)
-            
-            desc_btn = tk.Label(
-                btn_frame,
-                text=option['desc'],
-                font=desc_font,
-                bg="#34495e",
-                fg="#bdc3c7"
-            )
-            desc_btn.pack(pady=(0, 5))
-        
-        # Nút nhấn phím tùy ý
-        press_frame = tk.Frame(button_frame, bg="#9b59b6", relief="raised", bd=2)
-        press_frame.pack(fill="x", pady=(10, 5))
-        
-        press_btn = tk.Button(
-            press_frame,
-            text="⌨️ NHẤN PHÍM TÙY Ý",
-            font=button_font,
-            bg="#9b59b6",
-            fg="white",
-            relief="flat",
-            command=self.select_press_hotkey
-        )
-        press_btn.pack(fill="x", padx=5, pady=5)
-        
-        press_desc = tk.Label(
-            press_frame,
-            text="Nhấn nút rồi gõ tổ hợp phím bạn muốn",
-            font=desc_font,
-            bg="#9b59b6",
-            fg="white"
-        )
-        press_desc.pack(pady=(0, 5))
-    
-    def select_hotkey(self, hotkey):
-        """Chọn phím tắt có sẵn."""
-        self.selected_hotkey = hotkey
-        self.root.destroy()
-    
-    def select_press_hotkey(self):
-        """Chọn phím tắt bằng cách nhấn phím tùy ý."""
-        self.root.destroy()
-        press_window = PressHotkeyWindow()
-        self.selected_hotkey = press_window.get_hotkey()
-    
-    def get_hotkey(self):
-        """Hiển thị cửa sổ và trả về phím tắt được chọn."""
-        self.root.mainloop()
-        return self.selected_hotkey
-
-class PressHotkeyWindow:
-    """Cửa sổ nhấn phím tùy ý."""
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Nhấn phím tùy ý")
-        self.root.attributes('-topmost', True)
-        self.root.geometry("500x300")
-        self.root.configure(bg="#2c3e50")
-        self.root.resizable(False, False)
-        
-        self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.root.winfo_screenheight() // 2) - (300 // 2)
-        self.root.geometry(f"500x300+{x}+{y}")
-        
-        self.setup_ui()
-        self.hotkey = None
-    
-    def setup_ui(self):
-        """Thiết lập giao diện."""
-        title_font = tkFont.Font(family="Arial", size=16, weight="bold")
-        button_font = tkFont.Font(family="Arial", size=12)
-        desc_font = tkFont.Font(family="Arial", size=11)
-        
-        title_label = tk.Label(
-            self.root,
-            text="⌨️ NHẤN PHÍM TÙY Ý",
-            font=title_font,
-            bg="#2c3e50",
-            fg="#ecf0f1"
-        )
-        title_label.pack(pady=20)
-        
-        desc_label = tk.Label(
-            self.root,
-            text="Nhấn tổ hợp phím bạn muốn sử dụng:",
-            font=desc_font,
-            bg="#2c3e50",
-            fg="#bdc3c7"
-        )
-        desc_label.pack(pady=(0, 20))
-        
-        self.status_label = tk.Label(
-            self.root,
-            text="Đang chờ bạn nhấn phím...",
-            font=desc_font,
-            bg="#2c3e50",
-            fg="#f39c12"
-        )
-        self.status_label.pack(pady=10)
-        
-        button_frame = tk.Frame(self.root, bg="#2c3e50")
-        button_frame.pack(pady=20)
-        
-        cancel_btn = tk.Button(
-            button_frame,
-            text="❌ HỦY",
-            font=button_font,
-            bg="#e74c3c",
-            fg="white",
-            relief="flat",
-            command=self.cancel,
-            width=15,
-            height=2
-        )
-        cancel_btn.pack(padx=10)
-        
-        # Tự động bắt đầu lắng nghe sau khi UI đã sẵn sàng
-        self.root.after(100, self.start_listening)
-    
-    def start_listening(self):
-        """Bắt đầu lắng nghe phím tắt."""
-        self.status_label.config(text="Đang chờ bạn nhấn phím...", fg="#f39c12")
-        self.root.update()
-        
-        try:
-            hotkey = keyboard.read_hotkey(suppress=False)
-            self.hotkey = hotkey
-            self.status_label.config(text=f"Đã nhận phím tắt: {hotkey}", fg="#27ae60")
-            self.root.update()
-            self.root.after(2000, self.root.destroy)
-            
-        except Exception as e:
-            self.status_label.config(text=f"Lỗi: {str(e)}", fg="#e74c3c")
-            self.root.update()
-            self.root.after(3000, self.root.destroy)
-    
-    def get_hotkey(self):
-        """Lấy phím tắt từ người dùng."""
-        self.root.mainloop()
-        return self.hotkey
-    
-    def cancel(self):
-        """Hủy nhập phím tắt."""
-        self.hotkey = None
-        self.root.destroy()
-
-# ==============================================================================
-# PHẦN QUẢN LÝ CẤU HÌNH VÀ PHÍM TẮT
-# ==============================================================================
-
-def save_hotkey(hotkey_str):
-    """Lưu phím tắt vào file config.ini."""
-    config = configparser.ConfigParser()
-    config['Settings'] = {'hotkey': hotkey_str}
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as configfile:
-        config.write(configfile)
-    print(f"✓ Đã lưu phím tắt mới: {hotkey_str}")
-
-def load_hotkey():
-    """Tải phím tắt từ file config.ini."""
-    if not os.path.exists(CONFIG_FILE):
-        return None
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE, encoding='utf-8')
-    return config.get('Settings', 'hotkey', fallback=None)
-
-def prompt_for_hotkey():
-    """Hiển thị giao diện chọn phím tắt."""
-    print("\n" + "="*55)
-    print("✨ VUI LÒNG CHỌN PHÍM TẮT ✨")
-    print("="*55)
-
-    selector = HotkeySelectorWindow()
-    new_hotkey = selector.get_hotkey()
-
-    if new_hotkey:
-        print(f"\n✓ Bạn đã chọn: {new_hotkey}")
-        save_hotkey(new_hotkey)
-        return new_hotkey
-    else:
-        # Nếu không chọn được, dùng mặc định
-        default_hotkey = "ctrl+q"
-        print(f"\n⚠ Sử dụng phím tắt mặc định: {default_hotkey}")
-        save_hotkey(default_hotkey)
-        return default_hotkey
-
-def register_new_hotkey(new_hotkey):
-    """Hủy phím tắt cũ và đăng ký phím tắt mới."""
-    global current_hotkey, hotkey_handle
-    if hotkey_handle:
-        keyboard.remove_hotkey(hotkey_handle)
-
-    current_hotkey = new_hotkey
-    hotkey_handle = keyboard.add_hotkey(current_hotkey, trigger_ocr_selection)
-
-    if app_icon:
-        app_icon.title = f"OCR Tool (Hotkey: {current_hotkey})"
 
 # ==============================================================================
 # PHẦN QUẢN LÝ ICON TRÊN SYSTEM TRAY
@@ -567,15 +336,14 @@ def register_new_hotkey(new_hotkey):
 
 def change_hotkey_action():
     """Hành động được gọi khi người dùng chọn 'Thay đổi phím tắt'."""
-    print("\n🔄 Bắt đầu thay đổi phím tắt...")
-    new_hotkey = prompt_for_hotkey()
-    register_new_hotkey(new_hotkey)
+    if hotkey_manager:
+        # Chạy trong thread riêng để tránh block system tray
+        Thread(target=hotkey_manager.change_hotkey_from_tray, daemon=True).start()
 
 def exit_action(icon):
     """Hành động thoát ứng dụng."""
-    print("\n👋 Đã thoát!")
-    icon.stop()
-    os._exit(0)
+    print("\nDa thoat!")
+    cleanup_and_exit()
 
 def setup_and_run_tray_app():
     """Thiết lập và chạy icon trên khay hệ thống."""
@@ -588,7 +356,7 @@ def setup_and_run_tray_app():
         icon_path = os.path.join(base_path, ICON_FILE)
         image = Image.open(icon_path)
     except FileNotFoundError:
-        print(f"❌ Lỗi: Không tìm thấy file '{ICON_FILE}'. Sử dụng icon mặc định.")
+        print(f"Loi: Khong tim thay file '{ICON_FILE}'. Su dung icon mac dinh.")
         image = Image.new('RGB', (64, 64), 'black')
 
     menu = (
@@ -596,6 +364,7 @@ def setup_and_run_tray_app():
         item('Thoát', exit_action)
     )
 
+    current_hotkey = hotkey_manager.get_current_hotkey() if hotkey_manager else "unknown"
     app_icon = Icon("OCRTool", image, f"OCR Tool (Hotkey: {current_hotkey})", menu)
     app_icon.run()
 
@@ -604,11 +373,15 @@ def setup_and_run_tray_app():
 # ==============================================================================
 
 def main():
-    global current_hotkey
+    global hotkey_manager
 
     is_startup_run = "--startup" in sys.argv
 
     set_dpi_awareness()
+    
+    # Setup signal handlers để cleanup khi app bị terminate
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # ============================================================================
     # KIỂM TRA BẢN QUYỀN TRƯỚC KHI CHẠY APP
@@ -618,7 +391,7 @@ def main():
         
         if not license_manager.check_license():
             print("\n" + "="*60)
-            print("❌ KHÔNG THỂ KÍCH HOẠT BẢN QUYỀN")
+            print("KHONG THE KICH HOAT BAN QUYEN")
             print("="*60)
             print("Ứng dụng sẽ thoát sau 3 giây...")
             print("="*60 + "\n")
@@ -638,14 +411,19 @@ def main():
             sys.exit(1)
         
         print("\n" + "="*60)
-        print("✅ BẢN QUYỀN HỢP LỆ - Đang khởi động ứng dụng...")
+        print("BAN QUYEN HOP LE - Dang khoi dong ung dung...")
         print("="*60 + "\n")
         
     except Exception as e:
-        print(f"\n❌ Lỗi kiểm tra bản quyền: {e}")
+        print(f"\nLoi kiem tra ban quyen: {e}")
         print("Ứng dụng sẽ thoát sau 3 giây...\n")
         time.sleep(3)
         sys.exit(1)
+    
+    # ============================================================================
+    # KHỞI TẠO HOTKEY MANAGER
+    # ============================================================================
+    hotkey_manager = HotkeyManager(trigger_callback=trigger_ocr_selection)
     
     # ============================================================================
     # KHỞI ĐỘNG ỨNG DỤNG BÌNH THƯỜNG
@@ -655,33 +433,37 @@ def main():
         print("=" * 55)
         print("    Vietnamese OCR Tool - Optimized Version")
         print("=" * 55)
-        print("\n🚀 Tính năng tối ưu hóa:")
-        print("   ✓ Grayscale conversion (chuyển màu xám)")
-        print("   ✓ Image upscaling 2x (tăng độ phân giải)")
-        print("   ✓ Contrast enhancement (tăng độ tương phản)")
-        print("   ✓ Sharpness enhancement (tăng độ sắc nét)")
-        print("   ✓ Noise reduction (khử nhiễu)")
-        print("   ✓ Adaptive thresholding (ngưỡng hóa thông minh)")
-        print("   ✓ Tesseract LSTM mode (AI nhận dạng)")
+        print("\nTinh nang toi uu hoa:")
+        print("   - Grayscale conversion (chuyen mau xam)")
+        print("   - Image upscaling 2x (tang do phan giai)")
+        print("   - Contrast enhancement (tang do tuong phan)")
+        print("   - Sharpness enhancement (tang do sac net)")
+        print("   - Noise reduction (khu nhieu)")
+        print("   - Adaptive thresholding (nguong hoa thong minh)")
+        print("   - Tesseract LSTM mode (AI nhan dang)")
         print("=" * 55 + "\n")
 
-    loaded_key = load_hotkey()
+    # Tải phím tắt từ config hoặc yêu cầu người dùng chọn
+    loaded_key = hotkey_manager.load_hotkey()
     
     if not loaded_key:
-        change_hotkey_action()
-    else:
-        current_hotkey = loaded_key
+        hotkey_manager.prompt_for_hotkey()
+        loaded_key = hotkey_manager.get_current_hotkey()
+    
+    # Đăng ký phím tắt
+    if loaded_key:
+        hotkey_manager.register_hotkey(loaded_key)
         if not is_startup_run:
-            print(f"✓ Đã tải phím tắt đã lưu: {current_hotkey}")
-        register_new_hotkey(current_hotkey)
+            print(f"Da tai phim tat da luu: {loaded_key}")
 
     if not is_startup_run:
-        print("\n📖 Hướng dẫn:")
-        print(f"    • Nhấn '{current_hotkey}' để chọn vùng cần OCR")
-        print("    • Nhấn ESC để hủy chọn vùng")
-        print("    • Chuột phải vào icon ở khay hệ thống để thay đổi")
+        current_hotkey = hotkey_manager.get_current_hotkey()
+        print("\nHuong dan:")
+        print(f"    - Nhan '{current_hotkey}' de chon vung can OCR")
+        print("    - Nhan ESC de huy chon vung")
+        print("    - Chuot phai vao icon o khay he thong de thay doi")
         print("=" * 55 + "\n")
-        print("🚀 Ứng dụng đang chạy ở chế độ nền...")
+        print("Ung dung dang chay o che do nen...")
 
     setup_and_run_tray_app()
 

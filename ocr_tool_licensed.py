@@ -30,7 +30,7 @@ APP_NAME = "VietnameseOCRTool"
 CONFIG_DIR = os.path.join(os.getenv('LOCALAPPDATA'), APP_NAME) 
 os.makedirs(CONFIG_DIR, exist_ok=True) 
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.ini')
-ICON_FILE = 'icon.png'
+ICON_FILE = 'app_icon.ico'
 
 def get_tesseract_path():
     """Tìm đường dẫn đến tesseract.exe một cách linh động."""
